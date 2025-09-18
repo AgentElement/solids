@@ -20,6 +20,8 @@ class TokenType(Enum):
     SLASH = 15
     COLON = 16
     EOF = 17
+    LSQUARE = 18
+    RSQUARE = 19
 
 
 class Token:
@@ -45,6 +47,7 @@ class Lexer:
         if input[pos + offset] != ".":
             return (Token(TokenType.INT, lexeme, pos), offset)
         offset += 1
+        lexeme += "."
 
         while input[pos + offset].isnumeric():
             lexeme += input[pos + offset]
@@ -138,7 +141,7 @@ class Parser:
         self.lexer = Lexer()
         self.lexer.lex(input)
 
-        self.vertices = []
+        self.vertices = {}
         self.faces = []
         self.name = None
 
@@ -157,6 +160,8 @@ class Parser:
                 TokenType.INT
                 | TokenType.NAME
                 | TokenType.STAR
+                | TokenType.PLUS
+                | TokenType.MINUS
                 | TokenType.LPAREN
                 | TokenType.RPAREN
                 | TokenType.SLASH
@@ -183,12 +188,17 @@ class Parser:
 
         return token
 
+    def linebreak(self):
+        self.expect(TokenType.NEWLINE)
+        while self.lexer.peek(1).ttype == TokenType.NEWLINE:
+            self.expect(TokenType.NEWLINE)
+
     # name_def := names* \n
     def name_def(self):
         names = []
         while self.lexer.peek(1).ttype == TokenType.NAME:
-            names.append(self.expect(TokenType.NAME).ttype)
-        self.expect(TokenType.NEWLINE)
+            names.append(self.expect(TokenType.NAME).lexeme)
+        self.linebreak()
         self.name = " ".join(names)
 
     # constant_def := name = float \n
@@ -218,64 +228,90 @@ class Parser:
             while self.is_expression_ttype(self.lexer.peek(1).ttype):
                 exactv.append(self.expect_expression())
 
-        self.expect(TokenType.NEWLINE)
+        self.linebreak()
 
         self.constant_sequence.append(const)
         self.constant_exacts[const] = exactv
         self.constant_floats[const] = floatv
 
     # value := -? [name|int|float]
-    def value(self):
+    def value(self) -> list[Token]:
+        token_list = []
         if self.lexer.peek(1).ttype == TokenType.MINUS:
-            self.expect(TokenType.MINUS)
+            token_list.append(self.expect(TokenType.MINUS))
 
         ttype = self.lexer.peek(1).ttype
         match ttype:
             case TokenType.NAME:
-                self.expect(TokenType.NAME)
+                token_list.append(self.expect(TokenType.NAME))
             case TokenType.INT:
-                self.expect(TokenType.INT)
+                token_list.append(self.expect(TokenType.INT))
             case TokenType.FLOAT:
-                self.expect(TokenType.FLOAT)
+                token_list.append(self.expect(TokenType.FLOAT))
             case _:
                 self.syntax_error()
+        return token_list
 
     # vertex_def := name = (value, value, value) \n
     def vertex_def(self):
+        token_list = []
+        name = self.expect(TokenType.NAME).lexeme
+        self.expect(TokenType.EQ)
         self.expect(TokenType.LPAREN)
-        self.value()
+        token_list.append(Token(TokenType.LSQUARE, None, -1))
+        token_list += self.value()
         self.expect(TokenType.COMMA)
-        self.value()
+        token_list += self.value()
         self.expect(TokenType.COMMA)
-        self.value()
+        token_list += self.value()
         self.expect(TokenType.RPAREN)
-        self.expect(TokenType.NEWLINE)
+        token_list.append(Token(TokenType.RSQUARE, None, -1))
+        self.linebreak()
+
+        self.vertices[name] = token_list
 
     # face_def := { int, int, int } \n
     def face_def(self):
+        triplet = []
         self.expect(TokenType.LBRACE)
-        self.expect(TokenType.INT)
+        triplet.append(self.expect(TokenType.INT).lexeme)
         self.expect(TokenType.COMMA)
-        self.expect(TokenType.INT)
+        triplet.append(self.expect(TokenType.INT).lexeme)
         self.expect(TokenType.COMMA)
-        self.expect(TokenType.INT)
+        triplet.append(self.expect(TokenType.INT).lexeme)
         self.expect(TokenType.RBRACE)
-        self.expect(TokenType.NEWLINE)
+        self.linebreak()
+
+        self.faces.append(triplet)
 
     # constant_block := constant_seq*
     def constant_block(self):
         t1 = self.lexer.peek(1).ttype
         t2 = self.lexer.peek(2).ttype
         t3 = self.lexer.peek(3).ttype
+        t4 = self.lexer.peek(4).ttype
+        t5 = self.lexer.peek(5).ttype
         while (
             t1 == TokenType.NAME
             and t2 == TokenType.EQ
             and (t3 == TokenType.FLOAT or self.is_expression_ttype(t3))
+            and (
+                t4 == TokenType.EQ
+                or t4 == TokenType.NEWLINE
+                or self.is_expression_ttype(t4)
+            )
+            and (
+                t5 == TokenType.NAME
+                or t5 == TokenType.NEWLINE
+                or self.is_expression_ttype(t5)
+            )
         ):
             self.constant_def()
             t1 = self.lexer.peek(1).ttype
             t2 = self.lexer.peek(2).ttype
             t3 = self.lexer.peek(3).ttype
+            t4 = self.lexer.peek(4).ttype
+            t5 = self.lexer.peek(5).ttype
 
     # vertex_block := vertex_def*
     def vertex_block(self):
@@ -291,16 +327,22 @@ class Parser:
         if not self.expect(TokenType.NAME).lexeme == "Faces":
             self.syntax_error()
         self.expect(TokenType.COLON)
-        self.expect(TokenType.NEWLINE)
+        self.linebreak()
         while self.lexer.peek(1).ttype == TokenType.LBRACE:
             self.face_def()
 
     # polyhedron := name_def constant_block vertex_block face_block EOF
-    def polyhedron(self):
+    def polyhedron(self) -> Polyhedron:
         self.name_def()
         self.constant_block()
         self.vertex_block()
+        self.face_block()
         self.expect(TokenType.EOF)
+
+    def dump_tokenstream(self):
+        while self.lexer.peek(1).ttype != TokenType:
+            tok = self.lexer.get()
+            print(tok.ttype, tok.lexeme)
 
 
 def main():
