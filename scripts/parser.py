@@ -226,27 +226,73 @@ class Parser:
 
     # value := -? [name|int|float]
     def value(self):
-        pass
+        if self.lexer.peek(1).ttype == TokenType.MINUS:
+            self.expect(TokenType.MINUS)
+
+        ttype = self.lexer.peek(1).ttype
+        match ttype:
+            case TokenType.NAME:
+                self.expect(TokenType.NAME)
+            case TokenType.INT:
+                self.expect(TokenType.INT)
+            case TokenType.FLOAT:
+                self.expect(TokenType.FLOAT)
+            case _:
+                self.syntax_error()
 
     # vertex_def := name = (value, value, value) \n
     def vertex_def(self):
-        pass
+        self.expect(TokenType.LPAREN)
+        self.value()
+        self.expect(TokenType.COMMA)
+        self.value()
+        self.expect(TokenType.COMMA)
+        self.value()
+        self.expect(TokenType.RPAREN)
+        self.expect(TokenType.NEWLINE)
 
     # face_def := { int, int, int } \n
     def face_def(self):
-        pass
+        self.expect(TokenType.LBRACE)
+        self.expect(TokenType.INT)
+        self.expect(TokenType.COMMA)
+        self.expect(TokenType.INT)
+        self.expect(TokenType.COMMA)
+        self.expect(TokenType.INT)
+        self.expect(TokenType.RBRACE)
+        self.expect(TokenType.NEWLINE)
 
     # constant_block := constant_seq*
     def constant_block(self):
-        pass
+        t1 = self.lexer.peek(1).ttype
+        t2 = self.lexer.peek(2).ttype
+        t3 = self.lexer.peek(3).ttype
+        while (
+            t1 == TokenType.NAME
+            and t2 == TokenType.EQ
+            and (t3 == TokenType.FLOAT or self.is_expression_ttype(t3))
+        ):
+            self.constant_def()
+            t1 = self.lexer.peek(1).ttype
+            t2 = self.lexer.peek(2).ttype
+            t3 = self.lexer.peek(3).ttype
 
     # vertex_block := vertex_def*
     def vertex_block(self):
-        pass
+        t1 = self.lexer.peek(1).ttype
+        t2 = self.lexer.peek(2).ttype
+        while t1 == TokenType.NAME and t2 == TokenType.EQ:
+            self.vertex_def()
+            t1 = self.lexer.peek(1).ttype
+            t2 = self.lexer.peek(2).ttype
 
     # face_block := Faces : \n face_def*
     def face_block(self):
-        pass
+        if not self.expect(TokenType.NAME).lexeme == "Faces":
+            self.syntax_error()
+        self.expect(TokenType.COLON)
+        while self.lexer.peek(1).ttype == TokenType.LBRACE:
+            self.face_def()
 
     # polyhedron := name_def constant_block vertex_block face_block EOF
     def polyhedron(self):
