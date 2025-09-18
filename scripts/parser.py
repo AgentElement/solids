@@ -291,6 +291,7 @@ class Parser:
         if not self.expect(TokenType.NAME).lexeme == "Faces":
             self.syntax_error()
         self.expect(TokenType.COLON)
+        self.expect(TokenType.NEWLINE)
         while self.lexer.peek(1).ttype == TokenType.LBRACE:
             self.face_def()
 
