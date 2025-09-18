@@ -30,6 +30,46 @@ class Token:
         self.lexeme = lexeme
         self.pos = pos
 
+    def literal(self) -> str:
+        match self.ttype:
+            case TokenType.NAME | TokenType.FLOAT | TokenType.INT:
+                return str(self.lexeme)
+            case TokenType.EQ:
+                return "="
+            case TokenType.LPAREN:
+                return "("
+            case TokenType.RPAREN:
+                return ")"
+            case TokenType.LBRACE:
+                return "{"
+            case TokenType.RBRACE:
+                return "}"
+            case TokenType.LSQUARE:
+                return "["
+            case TokenType.RSQUARE:
+                return "]"
+            case TokenType.COMMA:
+                return ","
+            case TokenType.MINUS:
+                return "-"
+            case TokenType.NEWLINE:
+                return "\n"
+            case TokenType.STAR:
+                return "*"
+            case TokenType.PLUS:
+                return "+"
+            case TokenType.CARET:
+                return "^"
+            case TokenType.SLASH:
+                return "/"
+            case TokenType.COLON:
+                return ":"
+            case TokenType.EOF:
+                return "\0"
+
+    def __str__(self) -> str:
+        return f"{self.pos} {self.ttype} {self.lexeme}"
+
 
 class Lexer:
     def __init__(self) -> None:
