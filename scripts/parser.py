@@ -4,7 +4,6 @@ from enum import Enum
 class TokenType(Enum):
     NAME = 0
     EQ = 1
-    EXPR = 2
     LPAREN = 3
     RPAREN = 4
     LBRACE = 5
@@ -22,6 +21,7 @@ class TokenType(Enum):
     EOF = 17
     LSQUARE = 18
     RSQUARE = 19
+    SEMI = 20
 
 
 class Token:
@@ -66,6 +66,8 @@ class Token:
                 return ":"
             case TokenType.EOF:
                 return "\0"
+            case TokenType.SEMI:
+                return ";"
 
     def __str__(self) -> str:
         return f"{self.pos} {self.ttype} {self.lexeme}"
@@ -174,6 +176,87 @@ class Lexer:
         assert self.pos + i <= len(self.tokenstream)
         token = self.tokenstream[self.pos + i - 1]
         return token
+
+
+class Polyhedron:
+    def __init__(
+        self, name, vertices, faces, constant_exacts, constant_floats, constant_sequence
+    ) -> None:
+        self.vertices = vertices
+        self.faces = faces
+        self.name = name
+
+        self.constant_exacts = constant_exacts
+        self.constant_floats = constant_floats
+        self.constant_sequence = constant_sequence
+
+        self.edges = self.make_edgelist()
+
+    def make_edgelist(self) -> set[tuple[int, int]]:
+        edges = set()
+        for face in self.faces:
+            for i, v1 in enumerate(face):
+                for v2 in face[i:]:
+                    edges.add((v1, v2) if v1 < v2 else (v2, v1))
+        return edges
+
+    def openscad_vertices(self) -> list[Token]:
+        tokenstream = [
+            Token(TokenType.NAME, "vertices", -1),
+            Token(TokenType.EQ, None, -1),
+            Token(TokenType.LSQUARE, None, -1),
+            Token(TokenType.NEWLINE, None, -1),
+        ]
+        for vertex, token_list in self.vertices.items():
+            tokenstream += token_list
+            tokenstream.append(Token(TokenType.COMMA, None, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+        tokenstream.append(Token(TokenType.RSQUARE, None, -1))
+        tokenstream.append(Token(TokenType.SEMI, None, -1))
+        tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+        return tokenstream
+
+    def openscad_constants(self) -> list[Token]:
+        tokenstream = []
+        seen_constants = set()
+        for constant in self.constant_sequence:
+            if constant in seen_constants:
+                continue
+            tokenstream.append(Token(TokenType.NAME, constant, -1))
+            tokenstream.append(Token(TokenType.EQ, None, -1))
+            if constant in self.constant_exacts:
+                tokenstream += self.constant_exacts[constant]
+            else:
+                tokenstream += self.constant_floats[constant]
+            tokenstream.append(Token(TokenType.SEMI, None, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+        return tokenstream
+
+    def openscad_edges(self) -> list[Token]:
+        tokenstream = [
+            Token(TokenType.NAME, "edges", -1),
+            Token(TokenType.EQ, None, -1),
+            Token(TokenType.LSQUARE, None, -1),
+            Token(TokenType.NEWLINE, None, -1),
+        ]
+        for start, end in self.edges:
+            tokenstream.append(Token(TokenType.LSQUARE, None, -1))
+            tokenstream.append(Token(TokenType.NAME, str(start), -1))
+            tokenstream.append(Token(TokenType.COMMA, None, -1))
+            tokenstream.append(Token(TokenType.NAME, str(end), -1))
+            tokenstream.append(Token(TokenType.RSQUARE, None, -1))
+            tokenstream.append(Token(TokenType.COMMA, None, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+        tokenstream.append(Token(TokenType.RSQUARE, None, -1))
+        tokenstream.append(Token(TokenType.SEMI, None, -1))
+        tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+        return tokenstream
+
+    def openscad(self):
+        tokenstream = self.openscad_constants()
+        tokenstream += self.openscad_vertices()
+        tokenstream += self.openscad_edges()
+        print("".join([x.literal() for x in tokenstream]))
 
 
 class Parser:
@@ -300,9 +383,9 @@ class Parser:
         self.expect(TokenType.LPAREN)
         token_list.append(Token(TokenType.LSQUARE, None, -1))
         token_list += self.value()
-        self.expect(TokenType.COMMA)
+        token_list.append(self.expect(TokenType.COMMA))
         token_list += self.value()
-        self.expect(TokenType.COMMA)
+        token_list.append(self.expect(TokenType.COMMA))
         token_list += self.value()
         self.expect(TokenType.RPAREN)
         token_list.append(Token(TokenType.RSQUARE, None, -1))
@@ -379,6 +462,15 @@ class Parser:
         self.face_block()
         self.expect(TokenType.EOF)
 
+        return Polyhedron(
+            self.name,
+            self.vertices,
+            self.faces,
+            self.constant_exacts,
+            self.constant_floats,
+            self.constant_sequence,
+        )
+
     def dump_tokenstream(self):
         while self.lexer.peek(1).ttype != TokenType:
             tok = self.lexer.get()
@@ -388,8 +480,8 @@ class Parser:
 def main():
     with open("../data/DisdyakisTriacontahedron.txt") as f:
         parser = Parser(f.read())
-    while parser.lexer.peek(1).ttype != TokenType:
-        print(parser.lexer.get().ttype)
+    polyhedron = parser.polyhedron()
+    polyhedron.openscad()
 
 
 if __name__ == "__main__":
