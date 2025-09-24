@@ -252,11 +252,11 @@ class Polyhedron:
         tokenstream.append(Token(TokenType.NEWLINE, None, -1))
         return tokenstream
 
-    def openscad(self):
+    def openscad(self) -> str:
         tokenstream = self.openscad_constants()
         tokenstream += self.openscad_vertices()
         tokenstream += self.openscad_edges()
-        print("".join([x.literal() for x in tokenstream]))
+        return "".join([x.literal() for x in tokenstream])
 
 
 class Parser:
@@ -481,7 +481,7 @@ def main():
     with open("../data/DisdyakisTriacontahedron.txt") as f:
         parser = Parser(f.read())
     polyhedron = parser.polyhedron()
-    polyhedron.openscad()
+    print(polyhedron.openscad())
 
 
 if __name__ == "__main__":
