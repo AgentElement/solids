@@ -25,10 +25,14 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(self, ttype: TokenType, lexeme: str | None, pos: int) -> None:
+    def __init__(
+        self, ttype: TokenType, lexeme: str | None, pos: int, line: int, column: int
+    ) -> None:
         self.ttype = ttype
         self.lexeme = lexeme
         self.pos = pos
+        self.line = line
+        self.column = column
 
     def literal(self) -> str:
         match self.ttype:
@@ -79,7 +83,7 @@ class Lexer:
         self.pos = 0
 
     @staticmethod
-    def munch_num(input: str, pos: int) -> tuple[Token, int]:
+    def munch_num(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
         lexeme = ""
         offset = 0
         while input[pos + offset].isnumeric():
@@ -87,7 +91,7 @@ class Lexer:
             offset += 1
 
         if input[pos + offset] != ".":
-            return (Token(TokenType.INT, lexeme, pos), offset)
+            return (Token(TokenType.INT, lexeme, pos, line, column), offset)
         offset += 1
         lexeme += "."
 
@@ -95,10 +99,10 @@ class Lexer:
             lexeme += input[pos + offset]
             offset += 1
 
-        return (Token(TokenType.FLOAT, lexeme, pos), offset)
+        return (Token(TokenType.FLOAT, lexeme, pos, line, column), offset)
 
     @staticmethod
-    def munch_name(input: str, pos: int) -> tuple[Token, int]:
+    def munch_name(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
         if not input[pos].isalpha():
             raise Exception(f"Cannot parse name at position {pos}")
 
@@ -109,62 +113,105 @@ class Lexer:
             lexeme += input[pos + offset]
             offset += 1
 
-        return (Token(TokenType.NAME, lexeme, pos), offset)
+        return (Token(TokenType.NAME, lexeme, pos, line, column), offset)
 
     def lex(self, input: str):
         i = 0
+        line = 1
+        column = 1
         while i < len(input):
             match input[i]:
                 case "(":
-                    self.tokenstream.append(Token(TokenType.LPAREN, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.LPAREN, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case ")":
-                    self.tokenstream.append(Token(TokenType.RPAREN, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.RPAREN, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "{":
-                    self.tokenstream.append(Token(TokenType.LBRACE, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.LBRACE, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "}":
-                    self.tokenstream.append(Token(TokenType.RBRACE, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.RBRACE, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "=":
-                    self.tokenstream.append(Token(TokenType.EQ, None, i))
+                    self.tokenstream.append(Token(TokenType.EQ, None, i, line, column))
                     i += 1
+                    column += 1
                 case "-":
-                    self.tokenstream.append(Token(TokenType.MINUS, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.MINUS, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case ",":
-                    self.tokenstream.append(Token(TokenType.COMMA, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.COMMA, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "*":
-                    self.tokenstream.append(Token(TokenType.STAR, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.STAR, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "+":
-                    self.tokenstream.append(Token(TokenType.PLUS, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.PLUS, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "/":
-                    self.tokenstream.append(Token(TokenType.SLASH, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.SLASH, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "^":
-                    self.tokenstream.append(Token(TokenType.CARET, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.CARET, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case ":":
-                    self.tokenstream.append(Token(TokenType.COLON, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.COLON, None, i, line, column)
+                    )
                     i += 1
+                    column += 1
                 case "\n":
-                    self.tokenstream.append(Token(TokenType.NEWLINE, None, i))
+                    self.tokenstream.append(
+                        Token(TokenType.NEWLINE, None, i, line, column)
+                    )
                     i += 1
+                    line += 1
+                    column = 1
                 case " " | "\t":
                     i += 1
+                    column += 1
                 case "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9":
-                    (tok, offset) = self.munch_num(input, i)
+                    (tok, offset) = self.munch_num(input, i, line, column)
                     self.tokenstream.append(tok)
                     i += offset
+                    column += offset
                 case _:
-                    (tok, offset) = self.munch_name(input, i)
+                    (tok, offset) = self.munch_name(input, i, line, column)
                     self.tokenstream.append(tok)
                     i += offset
-        self.tokenstream.append(Token(TokenType.EOF, None, i))
+                    column += offset
+        self.tokenstream.append(Token(TokenType.EOF, None, i, line, column))
 
     def get(self) -> Token:
         token = self.tokenstream[self.pos]
@@ -191,29 +238,29 @@ class Polyhedron:
         self.constant_sequence = constant_sequence
 
         self.edges = self.make_edgelist()
+        self.vertex_figures = self.make_vertex_figures()
 
     def make_edgelist(self) -> set[tuple[int, int]]:
         edges = set()
         for face in self.faces:
-            for i, v1 in enumerate(face):
-                for v2 in face[i:]:
-                    edges.add((v1, v2) if v1 < v2 else (v2, v1))
+            for v1, v2 in zip(face, face[1:] + [face[0]]):
+                edges.add((v1, v2) if v1 < v2 else (v2, v1))
         return edges
 
     def openscad_vertices(self) -> list[Token]:
         tokenstream = [
-            Token(TokenType.NAME, "vertices", -1),
-            Token(TokenType.EQ, None, -1),
-            Token(TokenType.LSQUARE, None, -1),
-            Token(TokenType.NEWLINE, None, -1),
+            Token(TokenType.NAME, "vertices", -1, -1, -1),
+            Token(TokenType.EQ, None, -1, -1, -1),
+            Token(TokenType.LSQUARE, None, -1, -1, -1),
+            Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
         for vertex, token_list in self.vertices.items():
             tokenstream += token_list
-            tokenstream.append(Token(TokenType.COMMA, None, -1))
-            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
-        tokenstream.append(Token(TokenType.RSQUARE, None, -1))
-        tokenstream.append(Token(TokenType.SEMI, None, -1))
-        tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+            tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.RSQUARE, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.SEMI, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
         return tokenstream
 
     def openscad_constants(self) -> list[Token]:
@@ -222,34 +269,34 @@ class Polyhedron:
         for constant in self.constant_sequence:
             if constant in seen_constants:
                 continue
-            tokenstream.append(Token(TokenType.NAME, constant, -1))
-            tokenstream.append(Token(TokenType.EQ, None, -1))
+            tokenstream.append(Token(TokenType.NAME, constant, -1, -1, -1))
+            tokenstream.append(Token(TokenType.EQ, None, -1, -1, -1))
             if constant in self.constant_exacts:
                 tokenstream += self.constant_exacts[constant]
             else:
                 tokenstream += self.constant_floats[constant]
-            tokenstream.append(Token(TokenType.SEMI, None, -1))
-            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+            tokenstream.append(Token(TokenType.SEMI, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
         return tokenstream
 
     def openscad_edges(self) -> list[Token]:
         tokenstream = [
-            Token(TokenType.NAME, "edges", -1),
-            Token(TokenType.EQ, None, -1),
-            Token(TokenType.LSQUARE, None, -1),
-            Token(TokenType.NEWLINE, None, -1),
+            Token(TokenType.NAME, "edges", -1, -1, -1),
+            Token(TokenType.EQ, None, -1, -1, -1),
+            Token(TokenType.LSQUARE, None, -1, -1, -1),
+            Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
         for start, end in self.edges:
-            tokenstream.append(Token(TokenType.LSQUARE, None, -1))
-            tokenstream.append(Token(TokenType.NAME, str(start), -1))
-            tokenstream.append(Token(TokenType.COMMA, None, -1))
-            tokenstream.append(Token(TokenType.NAME, str(end), -1))
-            tokenstream.append(Token(TokenType.RSQUARE, None, -1))
-            tokenstream.append(Token(TokenType.COMMA, None, -1))
-            tokenstream.append(Token(TokenType.NEWLINE, None, -1))
-        tokenstream.append(Token(TokenType.RSQUARE, None, -1))
-        tokenstream.append(Token(TokenType.SEMI, None, -1))
-        tokenstream.append(Token(TokenType.NEWLINE, None, -1))
+            tokenstream.append(Token(TokenType.LSQUARE, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NAME, str(start), -1, -1, -1))
+            tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NAME, str(end), -1, -1, -1))
+            tokenstream.append(Token(TokenType.RSQUARE, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.RSQUARE, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.SEMI, None, -1, -1, -1))
+        tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
         return tokenstream
 
     def openscad(self) -> str:
@@ -297,7 +344,7 @@ class Parser:
         token = self.lexer.get()
         if token.ttype != ttype:
             raise Exception(
-                f"Expected {ttype} at position {token.pos}, found {token.ttype}"
+                f"Expected {ttype} at line {token.line} and column {token.column}, found {token.ttype}"
             )
 
         return token
@@ -319,8 +366,20 @@ class Parser:
     # name_def := names* \n
     def name_def(self):
         names = []
-        while self.lexer.peek(1).ttype == TokenType.NAME:
-            names.append(self.expect(TokenType.NAME).lexeme)
+        while self.lexer.peek(1).ttype in {
+            TokenType.NAME,
+            TokenType.LPAREN,
+            TokenType.RPAREN,
+        }:
+            match self.lexer.peek(1).ttype:
+                case TokenType.NAME:
+                    names.append(self.expect(TokenType.NAME).lexeme)
+                case TokenType.LPAREN:
+                    self.expect(TokenType.LPAREN)
+                    names.append("(")
+                case TokenType.RPAREN:
+                    self.expect(TokenType.RPAREN)
+                    names.append(")")
         self.linebreak()
         self.name = " ".join(names)
 
@@ -381,31 +440,33 @@ class Parser:
         name = self.expect(TokenType.NAME).lexeme
         self.expect(TokenType.EQ)
         self.expect(TokenType.LPAREN)
-        token_list.append(Token(TokenType.LSQUARE, None, -1))
+        token_list.append(Token(TokenType.LSQUARE, None, -1, -1, -1))
         token_list += self.value()
         token_list.append(self.expect(TokenType.COMMA))
         token_list += self.value()
         token_list.append(self.expect(TokenType.COMMA))
         token_list += self.value()
         self.expect(TokenType.RPAREN)
-        token_list.append(Token(TokenType.RSQUARE, None, -1))
+        token_list.append(Token(TokenType.RSQUARE, None, -1, -1, -1))
         self.linebreak()
 
         self.vertices[name] = token_list
 
-    # face_def := { int, int, int } \n
+    # face_def := { [int,]* int } \n
     def face_def(self):
-        triplet = []
+        face = []
         self.expect(TokenType.LBRACE)
-        triplet.append(self.expect(TokenType.INT).lexeme)
-        self.expect(TokenType.COMMA)
-        triplet.append(self.expect(TokenType.INT).lexeme)
-        self.expect(TokenType.COMMA)
-        triplet.append(self.expect(TokenType.INT).lexeme)
+        while (
+            self.lexer.peek(1).ttype == TokenType.INT
+            and self.lexer.peek(2).ttype == TokenType.COMMA
+        ):
+            face.append(self.expect(TokenType.INT).lexeme)
+            self.expect(TokenType.COMMA)
+        face.append(self.expect(TokenType.INT).lexeme)
         self.expect(TokenType.RBRACE)
         self.linebreak()
 
-        self.faces.append(triplet)
+        self.faces.append(face)
 
     # constant_block := constant_seq*
     def constant_block(self):

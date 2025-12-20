@@ -6,6 +6,7 @@ path = "../scad"
 url = "https://dmccooey.com/polyhedra/"
 data_dir = "../data/"
 
+
 def download_polyhedra():
     for directory in os.listdir(path):
         if os.path.isfile(os.path.join(path, directory)):
@@ -22,6 +23,7 @@ def download_polyhedra():
         subprocess.call(
             ["wget", "-c", url + output_fname, "-O", data_dir + output_fname]
         )
+
 
 def generate_vertices_scad():
     for directory in os.listdir(path):
@@ -40,11 +42,11 @@ def generate_vertices_scad():
             try:
                 parser = Parser(f.read())
                 polyhedron = parser.polyhedron()
-            except:
+            except Exception as e:
+                print(f"{output_fname}: {e}")
                 continue
         with open(path + "/" + directory + "/geometry.scad", "w") as f:
             f.write(polyhedron.openscad())
-
 
 
 if __name__ == "__main__":
