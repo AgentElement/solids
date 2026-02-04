@@ -249,7 +249,7 @@ class Polyhedron:
 
     def openscad_vertices(self) -> list[Token]:
         tokenstream = [
-            Token(TokenType.NAME, "vertices", -1, -1, -1),
+            Token(TokenType.NAME, f"{self.name}_vertices", -1, -1, -1),
             Token(TokenType.EQ, None, -1, -1, -1),
             Token(TokenType.LSQUARE, None, -1, -1, -1),
             Token(TokenType.NEWLINE, None, -1, -1, -1),
@@ -269,7 +269,7 @@ class Polyhedron:
         for constant in self.constant_sequence:
             if constant in seen_constants:
                 continue
-            tokenstream.append(Token(TokenType.NAME, constant, -1, -1, -1))
+            tokenstream.append(Token(TokenType.NAME, f"{self.name}_{constant}", -1, -1, -1))
             tokenstream.append(Token(TokenType.EQ, None, -1, -1, -1))
             if constant in self.constant_exacts:
                 tokenstream += self.constant_exacts[constant]
@@ -281,7 +281,7 @@ class Polyhedron:
 
     def openscad_edges(self) -> list[Token]:
         tokenstream = [
-            Token(TokenType.NAME, "edges", -1, -1, -1),
+            Token(TokenType.NAME, f"{self.name}_edges", -1, -1, -1),
             Token(TokenType.EQ, None, -1, -1, -1),
             Token(TokenType.LSQUARE, None, -1, -1, -1),
             Token(TokenType.NEWLINE, None, -1, -1, -1),
@@ -376,12 +376,10 @@ class Parser:
                     names.append(self.expect(TokenType.NAME).lexeme)
                 case TokenType.LPAREN:
                     self.expect(TokenType.LPAREN)
-                    names.append("(")
                 case TokenType.RPAREN:
                     self.expect(TokenType.RPAREN)
-                    names.append(")")
         self.linebreak()
-        self.name = " ".join(names)
+        self.name = "_".join(names).lower()
 
     # constant_def := name = float \n
     # constant_def := name = float = [int|name|*|(|)|+|/|*|] \n
