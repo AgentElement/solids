@@ -260,7 +260,10 @@ class Polyhedron:
             Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
         for vertex, token_list in self.vertices.items():
-            tokenstream += token_list
+            for token in token_list:
+                if token.ttype == TokenType.NAME:
+                    token.lexeme = f"{self.name}_{token.lexeme}"
+                tokenstream.append(token)
             tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
             tokenstream.append(Token(TokenType.NEWLINE, None, -1, -1, -1))
         tokenstream.append(Token(TokenType.RSQUARE, None, -1, -1, -1))
