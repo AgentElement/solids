@@ -2,51 +2,58 @@ import os
 import subprocess
 from parser import Parser
 
-path = "../scad"
+scad_dir = "../scad"
 url = "https://dmccooey.com/polyhedra/"
 data_dir = "../data/"
+polyhedron_file = "polyhedron_list.txt"
+
+
+def make_filename(polyhedron: str) -> str:
+    data = polyhedron.split("-")[2:]
+    filename = ""
+    for name in data:
+        filename += name[0].upper()
+        filename += name[1:].lower()
+    filename += ".txt"
+    return filename
 
 
 def download_polyhedra():
-    for directory in os.listdir(path):
-        if os.path.isfile(os.path.join(path, directory)):
+    with open(data_dir + polyhedron_file) as file:
+        polyhedron_list = file.read().splitlines()
+    for polyhedron in polyhedron_list:
+        filename = make_filename(polyhedron)
+        filepath = os.path.join(data_dir, filename)
+        if os.path.isfile(filepath):
             continue
-        data = directory.split("-")
-        fname = data[2:]
-        output_fname = ""
-        for name in fname:
-            output_fname += name[0].upper()
-            output_fname += name[1:].lower()
-        output_fname += ".txt"
-        if os.path.isfile(os.path.join(data_dir, output_fname)):
-            continue
-        subprocess.call(
-            ["wget", "-c", url + output_fname, "-O", data_dir + output_fname]
-        )
+        subprocess.call(["wget", "-c", url + filename, "-O", filepath])
+        try:
+            with open(filepath, "r", encoding="ascii") as file:
+                file.read()
+        except UnicodeDecodeError:
+            print(f"Cannot download {polyhedron}")
+            os.remove(filepath)
 
 
 def generate_vertices_scad():
-    for directory in os.listdir(path):
-        if os.path.isfile(os.path.join(path, directory)):
+    scad_geometry = ""
+    with open(data_dir + polyhedron_file) as file:
+        polyhedron_list = file.read().splitlines()
+    for polyhedron in polyhedron_list:
+        filename = make_filename(polyhedron)
+        filepath = os.path.join(data_dir, filename)
+        if not os.path.isfile(filepath):
             continue
-        data = directory.split("-")
-        fname = data[2:]
-        output_fname = ""
-        for name in fname:
-            output_fname += name[0].upper()
-            output_fname += name[1:].lower()
-        output_fname += ".txt"
-        if not os.path.isfile(os.path.join(data_dir, output_fname)):
-            continue
-        with open(data_dir + output_fname) as f:
+        with open(filepath) as file:
             try:
-                parser = Parser(f.read())
+                parser = Parser(file.read())
                 polyhedron = parser.polyhedron()
             except Exception as e:
-                print(f"{output_fname}: {e}")
+                print(f"{filename}: {e}")
                 continue
-        with open(path + "/" + directory + "/geometry.scad", "w") as f:
-            f.write(polyhedron.openscad())
+        scad_geometry += polyhedron.openscad() + "\n"
+    with open(os.path.join(scad_dir, "geometry.scad"), "w") as f:
+        f.write(scad_geometry)
 
 
 if __name__ == "__main__":
