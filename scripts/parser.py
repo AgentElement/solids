@@ -1,5 +1,9 @@
 from enum import Enum
 
+import argparse
+import os
+import glob
+
 
 class TokenType(Enum):
     NAME = 0
@@ -72,6 +76,8 @@ class Token:
                 return "\0"
             case TokenType.SEMI:
                 return ";"
+            case _:
+                raise Exception(f"Bad token type: {self.ttype}")
 
     def __str__(self) -> str:
         return f"{self.pos} {self.ttype} {self.lexeme}"
@@ -238,7 +244,6 @@ class Polyhedron:
         self.constant_sequence = constant_sequence
 
         self.edges = self.make_edgelist()
-        self.vertex_figures = self.make_vertex_figures()
 
     def make_edgelist(self) -> set[tuple[int, int]]:
         edges = set()
@@ -269,7 +274,9 @@ class Polyhedron:
         for constant in self.constant_sequence:
             if constant in seen_constants:
                 continue
-            tokenstream.append(Token(TokenType.NAME, f"{self.name}_{constant}", -1, -1, -1))
+            tokenstream.append(
+                Token(TokenType.NAME, f"{self.name}_{constant}", -1, -1, -1)
+            )
             tokenstream.append(Token(TokenType.EQ, None, -1, -1, -1))
             if constant in self.constant_exacts:
                 tokenstream += self.constant_exacts[constant]
@@ -537,10 +544,22 @@ class Parser:
 
 
 def main():
-    with open("../data/DisdyakisTriacontahedron.txt") as f:
-        parser = Parser(f.read())
-    polyhedron = parser.polyhedron()
-    print(polyhedron.openscad())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--directory", help="Directory containing polyhedron files")
+    parser.add_argument("--file", "-f", help="Specific file to process")
+    args = parser.parse_args()
+
+    if args.file:
+        with open(args.file) as f:
+            parser = Parser(f.read())
+        polyhedron = parser.polyhedron()
+        print(polyhedron.openscad())
+    else:
+        for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
+            with open(filepath) as f:
+                parser = Parser(f.read())
+            polyhedron = parser.polyhedron()
+            print(polyhedron.openscad())
 
 
 if __name__ == "__main__":
