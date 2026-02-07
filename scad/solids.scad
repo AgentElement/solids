@@ -74,6 +74,23 @@ function _vf_dedupe(list, i=0) =
     list[i][0] == list[i-1][0] ? _vf_dedupe(list, i+1) : // Skip duplicate
     concat([list[i][1]], _vf_dedupe(list, i+1));
 
+// Convert Rodrigues rotation matrix to Euler angles (XYZ convention)
+function rodrigues_to_euler(R) =
+    let(
+        // Clamp to avoid numerical issues with asin
+        sin_beta = -R[2][0],
+        beta = asin(sin_beta > 1 ? 1 : (sin_beta < -1 ? -1 : sin_beta)),
+        cos_beta = sqrt(1 - sin_beta*sin_beta)
+    )
+    (abs(cos_beta) < 1e-9) ?
+        // Gimbal lock at poles
+        [atan2(-R[1][2], R[1][1]), beta, 0] :
+        let(
+            alpha = atan2(R[1][0], R[0][0]),
+            gamma = atan2(R[2][1], R[2][2])
+        )
+        [alpha, beta, gamma];
+
 // Standardize: Rotate vectors so their mean aligns with [0, 1, 0]
 function _vf_standardize(vecs) =
     let(
@@ -101,7 +118,8 @@ function _vf_standardize(vecs) =
                 [c + u[0]*u[0]*C,     u[0]*u[1]*C - u[2]*s, u[0]*u[2]*C + u[1]*s],
                 [u[1]*u[0]*C + u[2]*s, c + u[1]*u[1]*C,     u[1]*u[2]*C - u[0]*s],
                 [u[2]*u[0]*C - u[1]*s, u[2]*u[1]*C + u[0]*s, c + u[2]*u[2]*C]
-            ]
+            ],
+            euler = rodrigues_to_euler(R)
         )
         [for(v=vecs) R * v];
 
