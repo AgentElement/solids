@@ -2,7 +2,14 @@ use <constants.scad>
 include <geometry.scad>
 
 // Main Function: Returns a list of distinct standardized vertex figures
-function get_standardized_vertex_figures(vertices, edges) =
+// Returns a len(vertices) list of 5-tuples containing:
+// 1. A vertex figure
+// 2. A standardization of vertex figures (the figure oriented such that the
+//      mean of all vectors points towards [0, 0, 1]
+// 3. The euler angle triple required to convert a vertex figure to its standardization
+// 4. The position of the original vertex
+// 5. A tag; vertex figures invariant under rotation recieve identical tags.
+function annotated_vertex_figures(vertices, edges) =
     let(
         // 1. Build Adjacency and Raw Figures
         raw_figs = [
@@ -16,18 +23,28 @@ function get_standardized_vertex_figures(vertices, edges) =
         ],
         // 2. Compute Signatures for Deduplication
         // We tag each figure with a signature [sig, figure]
-        tagged = [for(f=raw_figs) [_vf_signature(f), f]],
+        signed = [
+            for(i=[0:len(vertices)-1])
+            let (
+                fig = raw_figs[i],
+                std = _vf_standardize(fig),
+                tuple = [_vf_signature(fig), fig, std, vertices[i]]
+            ) tuple
+        ],
 
         // 3. Sort by Signature to group identicals
-        sorted_tagged = _vf_sort(tagged),
+        sorted = _vf_sort(signed),
 
         // 4. Filter Unique Figures
-        unique_figs = _vf_dedupe(sorted_tagged),
+        tagged = _vf_tag(sorted),
 
-        // 5. Standardize Orientation (Mean -> Y Axis)
-        std_figs = [for(f=unique_figs) _vf_standardize(f)]
+        // 5. figure, standardization, euler angle, vertex, tag
+        annotated_vertex_figures = [
+            for(i=[0:len(vertices)-1])
+            [sorted[i][1], sorted[i][2], sorted[i][2], sorted[i][3], tagged[i]]
+        ]
     )
-    std_figs;
+    annotated_vertex_figures;
 
 // Vector Normalization
 function _vf_normalize(v) = v / (norm(v)==0 ? 1 : norm(v));
@@ -67,15 +84,16 @@ function _vf_signature(vecs) =
     )
     concat(dots, triples);
 
-// Deduplicate a sorted list of [signature, figure] pairs
-function _vf_dedupe(list, i=0) =
+// Tag a sorted list of [signature, figure] pairs
+function _vf_tag(list, i=0, tag=0) =
     i >= len(list) ? [] :
-    i == 0 ? concat([list[0][1]], _vf_dedupe(list, i+1)) :
-    list[i][0] == list[i-1][0] ? _vf_dedupe(list, i+1) : // Skip duplicate
-    concat([list[i][1]], _vf_dedupe(list, i+1));
+    i == 0 || list[i][0] == list[i-1][0] ?
+        concat(tag, _vf_tag(list, i+1, tag)) :
+        concat(tag+1, _vf_tag(list, i+1, tag+1));
+
 
 // Convert Rodrigues rotation matrix to Euler angles (XYZ convention)
-function rodrigues_to_euler(R) =
+function _vf_rodrigues_to_euler(R) =
     let(
         // Clamp to avoid numerical issues with asin
         sin_beta = -R[2][0],
@@ -91,11 +109,11 @@ function rodrigues_to_euler(R) =
         )
         [alpha, beta, gamma];
 
-// Standardize: Rotate vectors so their mean aligns with [0, 1, 0]
+// Standardize: Rotate vectors so their mean aligns with [0, 0, 1]
 function _vf_standardize(vecs) =
     let(
         mean = _vf_sum_vecs(vecs),
-        target = [0, 1, 0],
+        target = [0, 0, 1],
         nm = norm(mean)
     )
     (nm < 1e-9) ? vecs : // Mean is zero (e.g. balanced star), cannot align unique axis
@@ -119,23 +137,29 @@ function _vf_standardize(vecs) =
                 [u[1]*u[0]*C + u[2]*s, c + u[1]*u[1]*C,     u[1]*u[2]*C - u[0]*s],
                 [u[2]*u[0]*C - u[1]*s, u[2]*u[1]*C + u[0]*s, c + u[2]*u[2]*C]
             ],
-            euler = rodrigues_to_euler(R)
+            euler = _vf_rodrigues_to_euler(R)
         )
         [for(v=vecs) R * v];
 
 
-// tetrahedron();
-// disdyakis_triacontahedron();
-figs = get_standardized_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
+figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
+
+colors = ["red", "green", "blue"];
 
 // Visualize the result
 for(i=[0:len(figs)-1]) {
-    translate([i*3, 0, 0]) {
+    fig = figs[i][0];
+    std = figs[i][1];
+    euler = figs[i][2];
+    vertex = figs[i][3];
+    tag = figs[i][4];
+
+    translate(vertex) {
         // Draw Origin
-        color("red") sphere(0.1);
+        color(colors[tag]) sphere(0.1);
         // Draw Vectors
-        for(v = figs[i]) {
-            color("blue")
+        for(v = std) {
+            color(colors[tag])
             hull() {
                 sphere(0.05);
                 translate(v) sphere(0.05);
@@ -143,4 +167,3 @@ for(i=[0:len(figs)-1]) {
         }
     }
 }
-#unit_sphere();
