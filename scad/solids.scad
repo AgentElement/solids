@@ -6,7 +6,7 @@ include <geometry.scad>
 // 1. A vertex figure
 // 2. A standardization of vertex figures (the figure oriented such that the
 //      mean of all vectors points towards [0, 0, 1]
-// 3. The euler angle triple required to convert a vertex figure to its standardization
+// 3. The euler angle triple required to convert a standardization back to its original orientation
 // 4. The position of the original vertex
 // 5. A tag; vertex figures invariant under rotation recieve identical tags.
 function annotated_vertex_figures(vertices, edges) =
@@ -41,10 +41,17 @@ function annotated_vertex_figures(vertices, edges) =
         // 5. figure, standardization, euler angle, vertex, tag
         annotated_vertex_figures = [
             for(i=[0:len(vertices)-1])
-            [sorted[i][1], sorted[i][2], sorted[i][2], sorted[i][3], tagged[i]]
+            [sorted[i][1], sorted[i][2][0], sorted[i][2][1], sorted[i][3], tagged[i]]
         ]
     )
     annotated_vertex_figures;
+
+
+// Matrix transpose
+function _vf_transpose(m) =
+    [for (j = [0 : len(m[0]) - 1])
+        [for (i = [0 : len(m) - 1]) m[i][j]]
+    ];
 
 // Vector Normalization
 function _vf_normalize(v) = v / (norm(v)==0 ? 1 : norm(v));
@@ -91,23 +98,28 @@ function _vf_tag(list, i=0, tag=0) =
         concat(tag, _vf_tag(list, i+1, tag)) :
         concat(tag+1, _vf_tag(list, i+1, tag+1));
 
-
-// Convert Rodrigues rotation matrix to Euler angles (XYZ convention)
-function _vf_rodrigues_to_euler(R) =
+// Decomposes a 3x3 rotation matrix into [x, y, z] Euler angles
+// suitable for OpenSCAD's rotate() function (Order: X -> Y -> Z)
+function _vf_rodrigues_to_rotation(m) =
     let(
-        // Clamp to avoid numerical issues with asin
-        sin_beta = -R[2][0],
-        beta = asin(sin_beta > 1 ? 1 : (sin_beta < -1 ? -1 : sin_beta)),
-        cos_beta = sqrt(1 - sin_beta*sin_beta)
+        // Calculate sy to check for Gimbal Lock (cos(y))
+        sy = sqrt(m[0][0] * m[0][0] + m[1][0] * m[1][0]),
+        singular = sy < 1e-6
     )
-    (abs(cos_beta) < 1e-9) ?
-        // Gimbal lock at poles
-        [atan2(-R[1][2], R[1][1]), beta, 0] :
-        let(
-            alpha = atan2(R[1][0], R[0][0]),
-            gamma = atan2(R[2][1], R[2][2])
-        )
-        [alpha, beta, gamma];
+    (!singular) ?
+        [
+            atan2(m[2][1], m[2][2]), // x
+            atan2(-m[2][0], sy),     // y
+            atan2(m[1][0], m[0][0])  // z
+        ]
+    :
+        // Handle Gimbal Lock cases
+        (m[2][0] < 0) ?
+            // y = 90 degrees (Singularity)
+            [ atan2(-m[1][2], m[1][1]), 90, 0 ]
+        :
+            // y = -90 degrees (Singularity)
+            [ atan2(-m[1][2], m[1][1]), -90, 0 ];
 
 // Standardize: Rotate vectors so their mean aligns with [0, 0, 1]
 function _vf_standardize(vecs) =
@@ -123,9 +135,11 @@ function _vf_standardize(vecs) =
         len_axis = norm(axis),
         dot_val = u_mean * target
     )
-    (len_axis < 1e-6) ? 
+    (len_axis < 1e-6) ?
         // Already aligned or anti-aligned
-        (dot_val > 0 ? vecs : [for(v=vecs) [v[0], -v[1], -v[2]]]) : // Flip 180 X if anti-aligned
+        (dot_val > 0 ?
+            [vecs, [0, 0, 0]] :
+            [[for(v=vecs) [v[0], -v[1], -v[2]]], [180, 0, 0]]) : // Flip 180 X if anti-aligned
         let(
             // Construct Rodrigues rotation matrix
             u = axis / len_axis,
@@ -137,9 +151,9 @@ function _vf_standardize(vecs) =
                 [u[1]*u[0]*C + u[2]*s, c + u[1]*u[1]*C,     u[1]*u[2]*C - u[0]*s],
                 [u[2]*u[0]*C - u[1]*s, u[2]*u[1]*C + u[0]*s, c + u[2]*u[2]*C]
             ],
-            euler = _vf_rodrigues_to_euler(R)
+            euler = _vf_rodrigues_to_rotation(_vf_transpose(R))
         )
-        [for(v=vecs) R * v];
+        [[for(v=vecs) R * v], euler];
 
 
 figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
@@ -154,10 +168,11 @@ for(i=[0:len(figs)-1]) {
     vertex = figs[i][3];
     tag = figs[i][4];
 
-    translate(vertex) {
+    translate(10 * vertex) {
         // Draw Origin
         color(colors[tag]) sphere(0.1);
         // Draw Vectors
+        rotate(euler)
         for(v = std) {
             color(colors[tag])
             hull() {
