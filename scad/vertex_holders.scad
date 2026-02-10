@@ -14,6 +14,24 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
+// Calculates the smallest translation length l such that the outer cylinders (radius R)
+// just touch the inner cylinders (radius r).
+function oset(v0, v1, R, r) =
+    let(
+        c = v0 * v1,
+        s = norm(cross(v0, v1)),
+
+        // Mode 1: Rim of Outer touches Side of Inner (active for acute angles)
+        l_side = (R * c + r) / s,
+
+        // Mode 2: Rim of Inner touches Base of Outer (active for obtuse angles)
+        // Uses identity cot(theta/2) = (1 + cos theta) / sin theta
+        l_base = (r * (1 + c)) / s
+    )
+    // Handle parallel case to avoid division by zero
+    s < 1e-9 ? (c > 0 ? 1e9 : 0) :
+    max(l_side, l_base);
+
 module vertex_holders() {
     figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
 
@@ -49,7 +67,7 @@ module disdyakis_triacontahedron_10(vecs) {
         let (
             v0 = vecs[0],
             v1 = vecs[1],
-            oset = EDGE_DIAMETER * norm(v0+v1) / norm(v0-v1) / 2,
+            oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2),
             rotation = direction_to_euler(v)
         )
         translate(oset * v)
