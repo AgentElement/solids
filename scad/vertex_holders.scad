@@ -14,7 +14,6 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
-
 module vertex_holders() {
     figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
 
@@ -47,24 +46,19 @@ module vertex_holders() {
 
 module disdyakis_triacontahedron_10(vecs) {
     for(v=vecs) {
-        translate(10 * v)
+        let (
+            v0 = vecs[0],
+            v1 = vecs[1],
+            oset = EDGE_DIAMETER * norm(v0+v1) / norm(v0-v1) / 2,
+            rotation = direction_to_euler(v)
+        )
+        translate(oset * v)
+        rotate(rotation)
+        linear_extrude(TUBE_DEPTH)
         difference() {
-            hull() {
-                rotate(direction_to_euler(v))
-                cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS);
-                translate(v * TUBE_DEPTH)
-                rotate(direction_to_euler(v))
-                cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS);
-            }
-            hull() {
-                rotate(direction_to_euler(v))
-                cylinder(d=EDGE_DIAMETER, h=WALL_THICKNESS);
-                translate(v * TUBE_DEPTH)
-                rotate(direction_to_euler(v))
-                cylinder(d=EDGE_DIAMETER, h=WALL_THICKNESS);
-            }
+            circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
+            circle(d=EDGE_DIAMETER);
         }
-
     }
 }
 
@@ -76,4 +70,4 @@ module disdyakis_triacontahedron_4(vecs) {
 
 //vertex_holders();
 figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
-disdyakis_triacontahedron_10(figs[61][1]);
+disdyakis_triacontahedron_10(figs[61][1], $fn=60);
