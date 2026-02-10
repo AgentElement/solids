@@ -3,9 +3,9 @@ include <geometry.scad>
 
 
 EDGE_DIAMETER = 5;
-WALL_THICKNESS = 2;
+WALL_THICKNESS = 1.6;
 EDGE_LENGTH = 200;
-TUBE_DEPTH = 20;
+TUBE_DEPTH = 10;
 
 function direction_to_euler(v) =
     [
@@ -21,10 +21,10 @@ function oset(v0, v1, R, r) =
         c = v0 * v1,
         s = norm(cross(v0, v1)),
 
-        // Mode 1: Rim of Outer touches Side of Inner (active for acute angles)
+        // Mode 1: Rim of outer contacts side of inner (active for acute angles)
         l_side = (R * c + r) / s,
 
-        // Mode 2: Rim of Inner touches Base of Outer (active for obtuse angles)
+        // Mode 2: Rim of inner touches base of outer (active for obtuse angles)
         // Uses identity cot(theta/2) = (1 + cos theta) / sin theta
         l_base = (r * (1 + c)) / s
     )
@@ -63,19 +63,23 @@ module vertex_holders() {
 }
 
 module disdyakis_triacontahedron_10(vecs) {
+    v0 = vecs[0];
+    v1 = vecs[1];
+    oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
+    rad = oset * norm([v0[0], v0[1]]);
+
+    cylinder(r=rad, h=WALL_THICKNESS);
     for(v=vecs) {
-        let (
-            v0 = vecs[0],
-            v1 = vecs[1],
-            oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2),
-            rotation = direction_to_euler(v)
-        )
+        rotation = direction_to_euler(v);
         translate(oset * v)
         rotate(rotation)
-        linear_extrude(TUBE_DEPTH)
-        difference() {
-            circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
-            circle(d=EDGE_DIAMETER);
+        union() {
+            linear_extrude(TUBE_DEPTH)
+            difference() {
+                circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
+                circle(d=EDGE_DIAMETER);
+            }
+            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS);
         }
     }
 }
