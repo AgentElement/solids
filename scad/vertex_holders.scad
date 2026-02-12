@@ -32,6 +32,15 @@ function oset(v0, v1, R, r) =
     s < 1e-9 ? (c > 0 ? 1e9 : 0) :
     max(l_side, l_base);
 
+function dot(a, b) = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+
+function min_cos_dist(t, vecs) =
+    let (
+        scores = [for(i=[1:len(vecs)-1]) dot(t,vecs[i]) / norm(vecs[i])],
+        ix = search(max(scores), scores)[0]
+    )
+    vecs[ix+1];
+
 module vertex_holders() {
     figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
 
@@ -64,7 +73,7 @@ module vertex_holders() {
 
 module disdyakis_triacontahedron_10(vecs) {
     v0 = vecs[0];
-    v1 = vecs[1];
+    v1 = min_cos_dist(v0, vecs);
     oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
     rad = oset * norm([v0[0], v0[1]]);
 
@@ -90,6 +99,6 @@ module disdyakis_triacontahedron_6(vecs) {
 module disdyakis_triacontahedron_4(vecs) {
 }
 
-//vertex_holders();
-figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
-disdyakis_triacontahedron_10(figs[61][1], $fn=60);
+vertex_holders();
+//figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
+//disdyakis_triacontahedron_10(figs[61][1], $fn=60);
