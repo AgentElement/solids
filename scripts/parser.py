@@ -327,7 +327,7 @@ class Parser:
 
         self.constant_exacts = {}
         self.constant_floats = {}
-        self.constant_sequence = []
+        self.constant_sequence = set()
 
     def syntax_error(self):
         token = self.lexer.peek(0)
@@ -420,7 +420,7 @@ class Parser:
 
         self.linebreak()
 
-        self.constant_sequence.append(const)
+        self.constant_sequence.add(const)
         self.constant_exacts[const] = exactv
         self.constant_floats[const] = floatv
 
