@@ -1,4 +1,4 @@
-use <solids.scad>
+use <annotated_vertex_figures.scad>
 include <geometry.scad>
 
 
@@ -7,6 +7,7 @@ WALL_THICKNESS = 1.6;
 EDGE_LENGTH = 100;
 TUBE_DEPTH = 10;
 
+// Convert a unit vector to euler angles
 function direction_to_euler(v) =
     [
         0,
@@ -14,6 +15,7 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
+// Height to translate the vertex holder before making the xy cut
 function cutoff_height(v, l, r) = (l * v[2] - r * norm([v[0], v[1]])) / norm(v);
 
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
@@ -34,8 +36,11 @@ function oset(v0, v1, R, r) =
     s < 1e-9 ? (c > 0 ? 1e9 : 0) :
     max(l_side, l_base);
 
+
+// Dot product
 function dot(a, b) = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 
+// Return the vector with minimum cosine distance to t; assume that t = vecs[0]
 function min_cos_dist(t, vecs) =
     let (
         scores = [for(i=[1:len(vecs)-1]) dot(t,vecs[i]) / norm(vecs[i])],
