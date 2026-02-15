@@ -4,7 +4,7 @@ include <geometry.scad>
 
 EDGE_DIAMETER = 5;
 WALL_THICKNESS = 1.6;
-EDGE_LENGTH = 200;
+EDGE_LENGTH = 100;
 TUBE_DEPTH = 10;
 
 function direction_to_euler(v) =
@@ -60,45 +60,38 @@ module vertex_holders() {
             // Draw Vectors
             rotate(euler)
             color(colors[tag])
-            if (tag == 0) {
-                disdyakis_triacontahedron_4(std);
-            } else if (tag == 1) {
-                disdyakis_triacontahedron_6(std);
-            } else if (tag == 2) {
-                disdyakis_triacontahedron_10(std);
-            };
+            vertex_holder(std);
         }
     }
 }
 
-module disdyakis_triacontahedron_10(vecs) {
+module vertex_holder(vecs) {
     v0 = vecs[0];
     v1 = min_cos_dist(v0, vecs);
     oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
     rad = oset * norm([v0[0], v0[1]]);
 
-    cylinder(r=rad, h=WALL_THICKNESS);
-    for(v=vecs) {
-        rotation = direction_to_euler(v);
-        translate(oset * v)
-        rotate(rotation)
-        union() {
-            linear_extrude(TUBE_DEPTH)
-            difference() {
-                circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
-                circle(d=EDGE_DIAMETER);
+    // cylinder(r=rad, h=WALL_THICKNESS);
+    difference() {
+        for(v=vecs) {
+            rotation = direction_to_euler(v);
+            translate(oset * v)
+            rotate(rotation)
+            union() {
+                linear_extrude(TUBE_DEPTH)
+                difference() {
+                    circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
+                    circle(d=EDGE_DIAMETER);
+                }
+                translate([0, 0, -oset])
+                cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
             }
-            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS);
         }
+        translate([0, 0, -50])
+        cube([100, 100, 100], center=true);
     }
 }
 
-module disdyakis_triacontahedron_6(vecs) {
-}
-
-module disdyakis_triacontahedron_4(vecs) {
-}
-
 vertex_holders();
-//figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
-//disdyakis_triacontahedron_10(figs[61][1], $fn=60);
+// figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
+// disdyakis_triacontahedron_10(figs[61][1], $fn=60);
