@@ -22,7 +22,7 @@
 21-c-tetrakis-hexahedron
 22-c-deltoidal-icositetrahedron
 23-c-disdyakis-dodecahedron
-24-c-pentagonal-icositetrahedron
+24-c-lpentagonal-icositetrahedron
 25-c-rhombic-triacontahedron
 26-c-triakis-icosahedron
 27-c-pentakis-dodecahedron
