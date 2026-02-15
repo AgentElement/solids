@@ -44,6 +44,23 @@ function min_cos_dist(t, vecs) =
     )
     vecs[ix+1];
 
+function offset_from_vecs(vecs) =
+    let (
+        v0 = vecs[0],
+        v1 = min_cos_dist(v0, vecs)
+    )
+    axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
+
+function best_offset(figs) =
+    let (
+        offsets = [for(i=[0:len(figs)-1])
+            let ( std = figs[i][1] )
+            offset_from_vecs(std)
+        ],
+        best = max(offsets)
+    )
+    best;
+
 module vertex_holder(vecs, holder_offset=0) {
     v0 = vecs[0];
     v1 = min_cos_dist(v0, vecs);
@@ -76,6 +93,7 @@ module vertex_holder(vecs, holder_offset=0) {
 
 module all_vertex_holders(vertices, edges) {
     figs = annotated_vertex_figures(vertices, edges);
+    holder_offset = best_offset(figs);
     colors = ["red", "green", "blue"];
 
     // Visualize the result
@@ -91,7 +109,7 @@ module all_vertex_holders(vertices, edges) {
             color(colors[tag]) sphere(0.1);
             // Draw Vectors
             color(colors[tag])
-            vertex_holder(std);
+            vertex_holder(std, holder_offset);
         }
     }
 }
