@@ -26,3 +26,29 @@ module hedron(coordinates, edges) {
 module unit_sphere() {
     sphere(r=UNIT);
 }
+
+
+module vertex_only_hedron(vertices, edges) {
+    figs = annotated_vertex_figures(vertices, edges);
+
+    colors = ["red", "green", "blue"];
+
+    // Visualize the result
+    for(i=[0:len(figs)-1]) {
+        fig = figs[i][0];
+        std = figs[i][1];
+        euler = figs[i][2];
+        vertex = figs[i][3];
+        tag = figs[i][4];
+
+        translate(EDGE_LENGTH * vertex) {
+            // Draw Origin
+            color(colors[tag]) sphere(0.1);
+            // Draw Vectors
+            rotate(euler)
+            color(colors[tag])
+            vertex_holder(std);
+        }
+    }
+}
+
