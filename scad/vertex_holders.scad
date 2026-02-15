@@ -14,6 +14,8 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
+function cutoff_height(v, l, r) = (l * v[2] - r * norm([v[0], v[1]])) / norm(v);
+
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
 // just touch the inner cylinders (radius r).
 function oset(v0, v1, R, r) =
@@ -75,6 +77,7 @@ module vertex_holder(vecs) {
     difference() {
         for(v=vecs) {
             rotation = direction_to_euler(v);
+            translate([0, 0, -cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS)])
             translate(oset * v)
             rotate(rotation)
             union() {
