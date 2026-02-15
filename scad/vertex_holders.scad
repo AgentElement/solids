@@ -1,11 +1,7 @@
 use <annotated_vertex_figures.scad>
 include <geometry.scad>
+include <constants.scad>
 
-
-EDGE_DIAMETER = 5;
-WALL_THICKNESS = 1.6;
-EDGE_LENGTH = 100;
-TUBE_DEPTH = 10;
 
 // Convert a unit vector to euler angles
 function direction_to_euler(v) =
@@ -20,7 +16,7 @@ function cutoff_height(v, l, r) = (l * v[2] - r * norm([v[0], v[1]])) / norm(v);
 
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
 // just touch the inner cylinders (radius r).
-function oset(v0, v1, R, r) =
+function axis_offset(v0, v1, R, r) =
     let(
         c = v0 * v1,
         s = norm(cross(v0, v1)),
@@ -48,17 +44,17 @@ function min_cos_dist(t, vecs) =
     )
     vecs[ix+1];
 
-module vertex_holder(vecs) {
+module vertex_holder(vecs, holder_offset=0) {
     v0 = vecs[0];
     v1 = min_cos_dist(v0, vecs);
-    oset = oset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
+    oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
     rad = oset * norm([v0[0], v0[1]]);
+    cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
     // cylinder(r=rad, h=WALL_THICKNESS);
     difference() {
         for(v=vecs) {
             rotation = direction_to_euler(v);
-            translate([0, 0, -cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS)])
             translate(oset * v)
             rotate(rotation)
             union() {
@@ -71,7 +67,7 @@ module vertex_holder(vecs) {
                 cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
             }
         }
-        translate([0, 0, -50])
+        translate([0, 0, -50+cutoff])
         cube([100, 100, 100], center=true);
     }
 }
