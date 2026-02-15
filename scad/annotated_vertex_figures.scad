@@ -1,6 +1,3 @@
-use <constants.scad>
-include <geometry.scad>
-
 // Main Function: Returns a list of distinct standardized vertex figures
 // Returns a len(vertices) list of 5-tuples containing:
 // 1. A vertex figure
