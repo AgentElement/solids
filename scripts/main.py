@@ -36,7 +36,7 @@ def download_polyhedra():
 
 
 def generate_vertices_scad():
-    scad_geometry = ""
+    scad_geometry = "include <geometry_utils.scad>\n"
     with open(data_dir + polyhedron_file) as file:
         polyhedron_list = file.read().splitlines()
     for polyhedron in polyhedron_list:
