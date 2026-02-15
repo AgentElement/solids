@@ -154,31 +154,3 @@ function _vf_standardize(vecs) =
             euler = _vf_rodrigues_to_rotation(_vf_transpose(R))
         )
         [[for(v=vecs) R * v], euler];
-
-
-figs = annotated_vertex_figures(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
-
-colors = ["red", "green", "blue"];
-
-// Visualize the result
-for(i=[0:len(figs)-1]) {
-    fig = figs[i][0];
-    std = figs[i][1];
-    euler = figs[i][2];
-    vertex = figs[i][3];
-    tag = figs[i][4];
-
-    translate(10 * vertex) {
-        // Draw Origin
-        color(colors[tag]) sphere(0.1);
-        // Draw Vectors
-        rotate(euler)
-        for(v = std) {
-            color(colors[tag])
-            hull() {
-                sphere(0.05);
-                translate(v) sphere(0.05);
-            }
-        }
-    }
-}
