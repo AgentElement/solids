@@ -8,20 +8,21 @@ include <constants.scad>
 module edge(a, b, d, o=0) {
     v = b - a;
     dist = norm(v);
-    u = v / dist;
-    a_new = a + u * o;
-    h = dist - 2 * o;
-
-    translate(a_new)
-    rotate([0, acos(v.z/h), atan2(v.y, v.x)])
-    cylinder(h = h, d = d, $fn = 32);
+    if (dist > 2 * o) {
+        phi = atan2(v[1], v[0]);
+        theta = acos(v[2] / dist);
+        translate(a)
+            rotate([0, theta, phi])
+            translate([0, 0, o])
+            cylinder(h = dist - 2 * o, d = d);
+    }
 }
 
-module hedron(coordinates, edges, norm_dist) {
+module hedron(coordinates, edges, norm_dist, o=0) {
     for (edge = edges) {
         a = coordinates[edge[0]] * norm_dist;
         b = coordinates[edge[1]] * norm_dist;
-        edge(a, b, EDGE_DIAMETER);
+        edge(a, b, EDGE_DIAMETER, o);
     }
 }
 
@@ -35,8 +36,10 @@ function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 module vertex_only_hedron(vertices, edges) {
     figs = annotated_vertex_figures(vertices, edges);
 
-    norm_dist = EDGE_LENGTH / max_dist(vertices);
-    hedron(vertices, edges, norm_dist);
+    holder_offset = best_offset(figs);
+
+    norm_dist = RADIUS / max_dist(vertices);
+    hedron(vertices, edges, norm_dist, holder_offset+WALL_THICKNESS);
 
     colors = ["red", "green", "blue"];
 
@@ -54,7 +57,7 @@ module vertex_only_hedron(vertices, edges) {
             // Draw Vectors
             rotate(euler)
             color(colors[tag])
-            vertex_holder(std);
+            vertex_holder(std, holder_offset);
         }
     }
 }
