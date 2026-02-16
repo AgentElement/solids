@@ -283,9 +283,13 @@ class Polyhedron:
             tokenstream.append(Token(TokenType.EQ, None, -1, -1, -1))
             if constant in self.constant_exacts:
                 for token in self.constant_exacts[constant]:
-                    if token.ttype == TokenType.NAME:
+                    lexeme = token.lexeme
+                    if (
+                        token.ttype == TokenType.NAME
+                        and lexeme in self.constant_sequence
+                    ):
                         tokenstream.append(
-                            Token(TokenType.NAME, f"{self.name}_{constant}", -1, -1, -1)
+                            Token(TokenType.NAME, f"{self.name}_{lexeme}", -1, -1, -1)
                         )
                     else:
                         tokenstream.append(token)

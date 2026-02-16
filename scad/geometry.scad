@@ -1,5 +1,5 @@
 include <geometry_utils.scad>
-tetrahedron_C0=tetrahedron_C0(2)/4;
+tetrahedron_C0=sqrt(2)/4;
 tetrahedron_vertices=[
 [tetrahedron_C0,-tetrahedron_C0,tetrahedron_C0],
 [tetrahedron_C0,tetrahedron_C0,-tetrahedron_C0],
@@ -40,7 +40,7 @@ cube_edges=[
 [6,7],
 ];
 
-octahedron_C0=octahedron_C0(2)/2;
+octahedron_C0=sqrt(2)/2;
 octahedron_vertices=[
 [0.0,0.0,octahedron_C0],
 [0.0,0.0,-octahedron_C0],
@@ -64,8 +64,8 @@ octahedron_edges=[
 [3,5],
 ];
 
-dodecahedron_C0=(1+dodecahedron_C0(5))/4;
-dodecahedron_C1=(3+dodecahedron_C1(5))/4;
+dodecahedron_C0=(1+sqrt(5))/4;
+dodecahedron_C1=(3+sqrt(5))/4;
 dodecahedron_vertices=[
 [0.0,0.5,dodecahedron_C1],
 [0.0,0.5,-dodecahedron_C1],
@@ -121,7 +121,7 @@ dodecahedron_edges=[
 [6,7],
 ];
 
-icosahedron_C0=(1+icosahedron_C0(5))/4;
+icosahedron_C0=(1+sqrt(5))/4;
 icosahedron_vertices=[
 [0.5,0.0,icosahedron_C0],
 [0.5,0.0,-icosahedron_C0],
@@ -169,8 +169,8 @@ icosahedron_edges=[
 [8,9],
 ];
 
-truncated_tetrahedron_C0=truncated_tetrahedron_C0(2)/4;
-truncated_tetrahedron_C1=3*truncated_tetrahedron_C1(2)/4;
+truncated_tetrahedron_C0=sqrt(2)/4;
+truncated_tetrahedron_C1=3*sqrt(2)/4;
 truncated_tetrahedron_vertices=[
 [truncated_tetrahedron_C0,-truncated_tetrahedron_C0,truncated_tetrahedron_C1],
 [truncated_tetrahedron_C0,truncated_tetrahedron_C0,-truncated_tetrahedron_C1],
@@ -206,7 +206,7 @@ truncated_tetrahedron_edges=[
 [6,7],
 ];
 
-cuboctahedron_C0=cuboctahedron_C0(2)/2;
+cuboctahedron_C0=sqrt(2)/2;
 cuboctahedron_vertices=[
 [cuboctahedron_C0,0.0,cuboctahedron_C0],
 [cuboctahedron_C0,0.0,-cuboctahedron_C0],
@@ -248,7 +248,7 @@ cuboctahedron_edges=[
 [6,9],
 ];
 
-truncated_cube_C0=(1+truncated_cube_C0(2))/2;
+truncated_cube_C0=(1+sqrt(2))/2;
 truncated_cube_vertices=[
 [truncated_cube_C0,0.5,truncated_cube_C0],
 [truncated_cube_C0,0.5,-truncated_cube_C0],
@@ -314,8 +314,8 @@ truncated_cube_edges=[
 [8,9],
 ];
 
-truncated_octahedron_C0=truncated_octahedron_C0(2)/2;
-truncated_octahedron_C1=truncated_octahedron_C1(2);
+truncated_octahedron_C0=sqrt(2)/2;
+truncated_octahedron_C1=sqrt(2);
 truncated_octahedron_vertices=[
 [truncated_octahedron_C0,0.0,truncated_octahedron_C1],
 [truncated_octahedron_C0,0.0,-truncated_octahedron_C1],
@@ -381,7 +381,7 @@ truncated_octahedron_edges=[
 [23,7],
 ];
 
-rhombicuboctahedron_C0=(1+rhombicuboctahedron_C0(2))/2;
+rhombicuboctahedron_C0=(1+sqrt(2))/2;
 rhombicuboctahedron_vertices=[
 [0.5,0.5,rhombicuboctahedron_C0],
 [0.5,0.5,-rhombicuboctahedron_C0],
@@ -459,8 +459,8 @@ rhombicuboctahedron_edges=[
 [8,9],
 ];
 
-truncated_cuboctahedron_C0=(1+truncated_cuboctahedron_C0(2))/2;
-truncated_cuboctahedron_C1=(1+2*truncated_cuboctahedron_C1(2))/2;
+truncated_cuboctahedron_C0=(1+sqrt(2))/2;
+truncated_cuboctahedron_C1=(1+2*sqrt(2))/2;
 truncated_cuboctahedron_vertices=[
 [truncated_cuboctahedron_C0,0.5,truncated_cuboctahedron_C1],
 [truncated_cuboctahedron_C0,0.5,-truncated_cuboctahedron_C1],
@@ -586,9 +586,9 @@ truncated_cuboctahedron_edges=[
 [8,9],
 ];
 
-snub_cube_laevo_C0=snub_cube_laevo_C0(3*(4-snub_cube_laevo_C0(17+3*snub_cube_laevo_C0(33))-snub_cube_laevo_C0(17-3*snub_cube_laevo_C0(33))))/6;
-snub_cube_laevo_C1=snub_cube_laevo_C1(3*(2+snub_cube_laevo_C1(17+3*snub_cube_laevo_C1(33))+snub_cube_laevo_C1(17-3*snub_cube_laevo_C1(33))))/6;
-snub_cube_laevo_C2=snub_cube_laevo_C2(3*(4+snub_cube_laevo_C2(199+3*snub_cube_laevo_C2(33))+snub_cube_laevo_C2(199-3*snub_cube_laevo_C2(33))))/6;
+snub_cube_laevo_C0=sqrt(3*(4-cbrt(17+3*sqrt(33))-cbrt(17-3*sqrt(33))))/6;
+snub_cube_laevo_C1=sqrt(3*(2+cbrt(17+3*sqrt(33))+cbrt(17-3*sqrt(33))))/6;
+snub_cube_laevo_C2=sqrt(3*(4+cbrt(199+3*sqrt(33))+cbrt(199-3*sqrt(33))))/6;
 snub_cube_laevo_vertices=[
 [snub_cube_laevo_C1,snub_cube_laevo_C0,snub_cube_laevo_C2],
 [snub_cube_laevo_C1,-snub_cube_laevo_C0,-snub_cube_laevo_C2],
@@ -678,9 +678,9 @@ snub_cube_laevo_edges=[
 [5,9],
 ];
 
-icosidodecahedron_C0=(1+icosidodecahedron_C0(5))/4;
-icosidodecahedron_C1=(3+icosidodecahedron_C1(5))/4;
-icosidodecahedron_C2=(1+icosidodecahedron_C2(5))/2;
+icosidodecahedron_C0=(1+sqrt(5))/4;
+icosidodecahedron_C1=(3+sqrt(5))/4;
+icosidodecahedron_C2=(1+sqrt(5))/2;
 icosidodecahedron_vertices=[
 [0.0,0.0,icosidodecahedron_C2],
 [0.0,0.0,-icosidodecahedron_C2],
@@ -776,11 +776,11 @@ icosidodecahedron_edges=[
 [29,5],
 ];
 
-truncated_dodecahedron_C0=(3+truncated_dodecahedron_C0(5))/4;
-truncated_dodecahedron_C1=(1+truncated_dodecahedron_C1(5))/2;
-truncated_dodecahedron_C2=(2+truncated_dodecahedron_C2(5))/2;
-truncated_dodecahedron_C3=(3+truncated_dodecahedron_C3(5))/2;
-truncated_dodecahedron_C4=(5+3*truncated_dodecahedron_C4(5))/4;
+truncated_dodecahedron_C0=(3+sqrt(5))/4;
+truncated_dodecahedron_C1=(1+sqrt(5))/2;
+truncated_dodecahedron_C2=(2+sqrt(5))/2;
+truncated_dodecahedron_C3=(3+sqrt(5))/2;
+truncated_dodecahedron_C4=(5+3*sqrt(5))/4;
 truncated_dodecahedron_vertices=[
 [0.0,0.5,truncated_dodecahedron_C4],
 [0.0,0.5,-truncated_dodecahedron_C4],
@@ -936,11 +936,11 @@ truncated_dodecahedron_edges=[
 [6,7],
 ];
 
-truncated_icosahedron_C0=(1+truncated_icosahedron_C0(5))/4;
-truncated_icosahedron_C1=(1+truncated_icosahedron_C1(5))/2;
-truncated_icosahedron_C2=(5+truncated_icosahedron_C2(5))/4;
-truncated_icosahedron_C3=(2+truncated_icosahedron_C3(5))/2;
-truncated_icosahedron_C4=3*(1+truncated_icosahedron_C4(5))/4;
+truncated_icosahedron_C0=(1+sqrt(5))/4;
+truncated_icosahedron_C1=(1+sqrt(5))/2;
+truncated_icosahedron_C2=(5+sqrt(5))/4;
+truncated_icosahedron_C3=(2+sqrt(5))/2;
+truncated_icosahedron_C4=3*(1+sqrt(5))/4;
 truncated_icosahedron_vertices=[
 [0.5,0.0,truncated_icosahedron_C4],
 [0.5,0.0,-truncated_icosahedron_C4],
@@ -1096,11 +1096,11 @@ truncated_icosahedron_edges=[
 [8,9],
 ];
 
-rhombicosidodecahedron_C0=(1+rhombicosidodecahedron_C0(5))/4;
-rhombicosidodecahedron_C1=(3+rhombicosidodecahedron_C1(5))/4;
-rhombicosidodecahedron_C2=(1+rhombicosidodecahedron_C2(5))/2;
-rhombicosidodecahedron_C3=(5+rhombicosidodecahedron_C3(5))/4;
-rhombicosidodecahedron_C4=(2+rhombicosidodecahedron_C4(5))/2;
+rhombicosidodecahedron_C0=(1+sqrt(5))/4;
+rhombicosidodecahedron_C1=(3+sqrt(5))/4;
+rhombicosidodecahedron_C2=(1+sqrt(5))/2;
+rhombicosidodecahedron_C3=(5+sqrt(5))/4;
+rhombicosidodecahedron_C4=(2+sqrt(5))/2;
 rhombicosidodecahedron_vertices=[
 [0.5,0.5,rhombicosidodecahedron_C4],
 [0.5,0.5,-rhombicosidodecahedron_C4],
@@ -1286,16 +1286,16 @@ rhombicosidodecahedron_edges=[
 [8,9],
 ];
 
-truncated_icosidodecahedron_C0=(3+truncated_icosidodecahedron_C0(5))/4;
-truncated_icosidodecahedron_C1=(1+truncated_icosidodecahedron_C1(5))/2;
-truncated_icosidodecahedron_C2=(5+truncated_icosidodecahedron_C2(5))/4;
-truncated_icosidodecahedron_C3=(2+truncated_icosidodecahedron_C3(5))/2;
-truncated_icosidodecahedron_C4=3*(1+truncated_icosidodecahedron_C4(5))/4;
-truncated_icosidodecahedron_C5=(3+truncated_icosidodecahedron_C5(5))/2;
-truncated_icosidodecahedron_C6=(5+3*truncated_icosidodecahedron_C6(5))/4;
-truncated_icosidodecahedron_C7=(4+truncated_icosidodecahedron_C7(5))/2;
-truncated_icosidodecahedron_C8=(7+3*truncated_icosidodecahedron_C8(5))/4;
-truncated_icosidodecahedron_C9=(3+2*truncated_icosidodecahedron_C9(5))/2;
+truncated_icosidodecahedron_C0=(3+sqrt(5))/4;
+truncated_icosidodecahedron_C1=(1+sqrt(5))/2;
+truncated_icosidodecahedron_C2=(5+sqrt(5))/4;
+truncated_icosidodecahedron_C3=(2+sqrt(5))/2;
+truncated_icosidodecahedron_C4=3*(1+sqrt(5))/4;
+truncated_icosidodecahedron_C5=(3+sqrt(5))/2;
+truncated_icosidodecahedron_C6=(5+3*sqrt(5))/4;
+truncated_icosidodecahedron_C7=(4+sqrt(5))/2;
+truncated_icosidodecahedron_C8=(7+3*sqrt(5))/4;
+truncated_icosidodecahedron_C9=(3+2*sqrt(5))/2;
 truncated_icosidodecahedron_vertices=[
 [0.5,0.5,truncated_icosidodecahedron_C9],
 [0.5,0.5,-truncated_icosidodecahedron_C9],
@@ -1601,23 +1601,23 @@ truncated_icosidodecahedron_edges=[
 [91,99],
 ];
 
-snub_dodecahedron_laevo_phi=(1+snub_dodecahedron_laevo_phi(5))/2;
-snub_dodecahedron_laevo_x=snub_dodecahedron_laevo_x((snub_dodecahedron_laevo_x+snub_dodecahedron_laevo_x(snub_dodecahedron_laevo_x-5/27))/2)+snub_dodecahedron_laevo_x((snub_dodecahedron_laevo_x-snub_dodecahedron_laevo_x(snub_dodecahedron_laevo_x-5/27))/2);
-snub_dodecahedron_laevo_C0=snub_dodecahedron_laevo_C0*snub_dodecahedron_laevo_C0(3-(snub_dodecahedron_laevo_C0^2))/2;
-snub_dodecahedron_laevo_C1=snub_dodecahedron_laevo_C1*snub_dodecahedron_laevo_C1*snub_dodecahedron_laevo_C1(3-(snub_dodecahedron_laevo_C1^2))/2;
-snub_dodecahedron_laevo_C2=snub_dodecahedron_laevo_C2*snub_dodecahedron_laevo_C2((snub_dodecahedron_laevo_C2-1-(1/snub_dodecahedron_laevo_C2))*snub_dodecahedron_laevo_C2)/2;
-snub_dodecahedron_laevo_C3=(snub_dodecahedron_laevo_C3^2)*snub_dodecahedron_laevo_C3*snub_dodecahedron_laevo_C3(3-(snub_dodecahedron_laevo_C3^2))/2;
-snub_dodecahedron_laevo_C4=snub_dodecahedron_laevo_C4*snub_dodecahedron_laevo_C4*snub_dodecahedron_laevo_C4((snub_dodecahedron_laevo_C4-1-(1/snub_dodecahedron_laevo_C4))*snub_dodecahedron_laevo_C4)/2;
-snub_dodecahedron_laevo_C5=snub_dodecahedron_laevo_C5*snub_dodecahedron_laevo_C5(1-snub_dodecahedron_laevo_C5+(1+snub_dodecahedron_laevo_C5)/snub_dodecahedron_laevo_C5)/2;
-snub_dodecahedron_laevo_C6=snub_dodecahedron_laevo_C6*snub_dodecahedron_laevo_C6(snub_dodecahedron_laevo_C6+1-snub_dodecahedron_laevo_C6)/2;
-snub_dodecahedron_laevo_C7=(snub_dodecahedron_laevo_C7^2)*snub_dodecahedron_laevo_C7*snub_dodecahedron_laevo_C7((snub_dodecahedron_laevo_C7-1-(1/snub_dodecahedron_laevo_C7))*snub_dodecahedron_laevo_C7)/2;
-snub_dodecahedron_laevo_C8=snub_dodecahedron_laevo_C8*snub_dodecahedron_laevo_C8*snub_dodecahedron_laevo_C8(1-snub_dodecahedron_laevo_C8+(1+snub_dodecahedron_laevo_C8)/snub_dodecahedron_laevo_C8)/2;
-snub_dodecahedron_laevo_C9=snub_dodecahedron_laevo_C9((snub_dodecahedron_laevo_C9+2)*snub_dodecahedron_laevo_C9+2)/2;
-snub_dodecahedron_laevo_C10=snub_dodecahedron_laevo_C10*snub_dodecahedron_laevo_C10(snub_dodecahedron_laevo_C10*(1+snub_dodecahedron_laevo_C10)-snub_dodecahedron_laevo_C10)/2;
-snub_dodecahedron_laevo_C11=snub_dodecahedron_laevo_C11((snub_dodecahedron_laevo_C11^2)*(1+2*snub_dodecahedron_laevo_C11)-snub_dodecahedron_laevo_C11)/2;
-snub_dodecahedron_laevo_C12=snub_dodecahedron_laevo_C12*snub_dodecahedron_laevo_C12((snub_dodecahedron_laevo_C12^2)+snub_dodecahedron_laevo_C12)/2;
-snub_dodecahedron_laevo_C13=(snub_dodecahedron_laevo_C13^2)*snub_dodecahedron_laevo_C13(snub_dodecahedron_laevo_C13*(snub_dodecahedron_laevo_C13+snub_dodecahedron_laevo_C13)+1)/(2*snub_dodecahedron_laevo_C13);
-snub_dodecahedron_laevo_C14=snub_dodecahedron_laevo_C14*snub_dodecahedron_laevo_C14(snub_dodecahedron_laevo_C14*(snub_dodecahedron_laevo_C14+snub_dodecahedron_laevo_C14)+1)/2;
+snub_dodecahedron_laevo_phi=(1+sqrt(5))/2;
+snub_dodecahedron_laevo_x=cbrt((snub_dodecahedron_laevo_phi+sqrt(snub_dodecahedron_laevo_phi-5/27))/2)+cbrt((snub_dodecahedron_laevo_phi-sqrt(snub_dodecahedron_laevo_phi-5/27))/2);
+snub_dodecahedron_laevo_C0=snub_dodecahedron_laevo_phi*sqrt(3-(snub_dodecahedron_laevo_x^2))/2;
+snub_dodecahedron_laevo_C1=snub_dodecahedron_laevo_x*snub_dodecahedron_laevo_phi*sqrt(3-(snub_dodecahedron_laevo_x^2))/2;
+snub_dodecahedron_laevo_C2=snub_dodecahedron_laevo_phi*sqrt((snub_dodecahedron_laevo_x-1-(1/snub_dodecahedron_laevo_x))*snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C3=(snub_dodecahedron_laevo_x^2)*snub_dodecahedron_laevo_phi*sqrt(3-(snub_dodecahedron_laevo_x^2))/2;
+snub_dodecahedron_laevo_C4=snub_dodecahedron_laevo_x*snub_dodecahedron_laevo_phi*sqrt((snub_dodecahedron_laevo_x-1-(1/snub_dodecahedron_laevo_x))*snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C5=snub_dodecahedron_laevo_phi*sqrt(1-snub_dodecahedron_laevo_x+(1+snub_dodecahedron_laevo_phi)/snub_dodecahedron_laevo_x)/2;
+snub_dodecahedron_laevo_C6=snub_dodecahedron_laevo_phi*sqrt(snub_dodecahedron_laevo_x+1-snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C7=(snub_dodecahedron_laevo_x^2)*snub_dodecahedron_laevo_phi*sqrt((snub_dodecahedron_laevo_x-1-(1/snub_dodecahedron_laevo_x))*snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C8=snub_dodecahedron_laevo_x*snub_dodecahedron_laevo_phi*sqrt(1-snub_dodecahedron_laevo_x+(1+snub_dodecahedron_laevo_phi)/snub_dodecahedron_laevo_x)/2;
+snub_dodecahedron_laevo_C9=sqrt((snub_dodecahedron_laevo_x+2)*snub_dodecahedron_laevo_phi+2)/2;
+snub_dodecahedron_laevo_C10=snub_dodecahedron_laevo_x*sqrt(snub_dodecahedron_laevo_x*(1+snub_dodecahedron_laevo_phi)-snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C11=sqrt((snub_dodecahedron_laevo_x^2)*(1+2*snub_dodecahedron_laevo_phi)-snub_dodecahedron_laevo_phi)/2;
+snub_dodecahedron_laevo_C12=snub_dodecahedron_laevo_phi*sqrt((snub_dodecahedron_laevo_x^2)+snub_dodecahedron_laevo_x)/2;
+snub_dodecahedron_laevo_C13=(snub_dodecahedron_laevo_phi^2)*sqrt(snub_dodecahedron_laevo_x*(snub_dodecahedron_laevo_x+snub_dodecahedron_laevo_phi)+1)/(2*snub_dodecahedron_laevo_x);
+snub_dodecahedron_laevo_C14=snub_dodecahedron_laevo_phi*sqrt(snub_dodecahedron_laevo_x*(snub_dodecahedron_laevo_x+snub_dodecahedron_laevo_phi)+1)/2;
 snub_dodecahedron_laevo_vertices=[
 [snub_dodecahedron_laevo_C2,-snub_dodecahedron_laevo_C1,snub_dodecahedron_laevo_C14],
 [snub_dodecahedron_laevo_C2,snub_dodecahedron_laevo_C1,-snub_dodecahedron_laevo_C14],
@@ -1833,8 +1833,8 @@ snub_dodecahedron_laevo_edges=[
 [6,7],
 ];
 
-triakis_tetrahedron_C0=9*triakis_tetrahedron_C0(2)/20;
-triakis_tetrahedron_C1=3*triakis_tetrahedron_C1(2)/4;
+triakis_tetrahedron_C0=9*sqrt(2)/20;
+triakis_tetrahedron_C1=3*sqrt(2)/4;
 triakis_tetrahedron_vertices=[
 [triakis_tetrahedron_C1,triakis_tetrahedron_C1,triakis_tetrahedron_C1],
 [triakis_tetrahedron_C1,-triakis_tetrahedron_C1,-triakis_tetrahedron_C1],
@@ -1866,8 +1866,8 @@ triakis_tetrahedron_edges=[
 [3,7],
 ];
 
-rhombic_dodecahedron_C0=3*rhombic_dodecahedron_C0(2)/8;
-rhombic_dodecahedron_C1=3*rhombic_dodecahedron_C1(2)/4;
+rhombic_dodecahedron_C0=3*sqrt(2)/8;
+rhombic_dodecahedron_C1=3*sqrt(2)/4;
 rhombic_dodecahedron_vertices=[
 [0.0,0.0,rhombic_dodecahedron_C1],
 [0.0,0.0,-rhombic_dodecahedron_C1],
@@ -1911,7 +1911,7 @@ rhombic_dodecahedron_edges=[
 [5,9],
 ];
 
-triakis_octahedron_C0=1+triakis_octahedron_C0(2);
+triakis_octahedron_C0=1+sqrt(2);
 triakis_octahedron_vertices=[
 [0.0,0.0,triakis_octahedron_C0],
 [0.0,0.0,-triakis_octahedron_C0],
@@ -1967,8 +1967,8 @@ triakis_octahedron_edges=[
 [5,9],
 ];
 
-tetrakis_hexahedron_C0=3*tetrakis_hexahedron_C0(2)/4;
-tetrakis_hexahedron_C1=9*tetrakis_hexahedron_C1(2)/8;
+tetrakis_hexahedron_C0=3*sqrt(2)/4;
+tetrakis_hexahedron_C1=9*sqrt(2)/8;
 tetrakis_hexahedron_vertices=[
 [0.0,0.0,tetrakis_hexahedron_C1],
 [0.0,0.0,-tetrakis_hexahedron_C1],
@@ -2024,8 +2024,8 @@ tetrakis_hexahedron_edges=[
 [8,9],
 ];
 
-deltoidal_icositetrahedron_C0=(4+deltoidal_icositetrahedron_C0(2))/7;
-deltoidal_icositetrahedron_C1=deltoidal_icositetrahedron_C1(2);
+deltoidal_icositetrahedron_C0=(4+sqrt(2))/7;
+deltoidal_icositetrahedron_C1=sqrt(2);
 deltoidal_icositetrahedron_vertices=[
 [0.0,0.0,deltoidal_icositetrahedron_C1],
 [0.0,0.0,-deltoidal_icositetrahedron_C1],
@@ -2105,9 +2105,9 @@ deltoidal_icositetrahedron_edges=[
 [3,9],
 ];
 
-disdyakis_dodecahedron_C0=disdyakis_dodecahedron_C0(2);
-disdyakis_dodecahedron_C1=(3+6*disdyakis_dodecahedron_C1(2))/7;
-disdyakis_dodecahedron_C2=(6+9*disdyakis_dodecahedron_C2(2))/7;
+disdyakis_dodecahedron_C0=sqrt(2);
+disdyakis_dodecahedron_C1=(3+6*sqrt(2))/7;
+disdyakis_dodecahedron_C2=(6+9*sqrt(2))/7;
 disdyakis_dodecahedron_vertices=[
 [0.0,0.0,disdyakis_dodecahedron_C2],
 [0.0,0.0,-disdyakis_dodecahedron_C2],
@@ -2211,10 +2211,10 @@ disdyakis_dodecahedron_edges=[
 [3,9],
 ];
 
-pentagonal_icositetrahedron_laevo_C0=pentagonal_icositetrahedron_laevo_C0(6*(pentagonal_icositetrahedron_laevo_C0(6*(9+pentagonal_icositetrahedron_laevo_C0(33)))+pentagonal_icositetrahedron_laevo_C0(6*(9-pentagonal_icositetrahedron_laevo_C0(33)))-6))/12;
-pentagonal_icositetrahedron_laevo_C1=pentagonal_icositetrahedron_laevo_C1(6*(6+pentagonal_icositetrahedron_laevo_C1(6*(9+pentagonal_icositetrahedron_laevo_C1(33)))+pentagonal_icositetrahedron_laevo_C1(6*(9-pentagonal_icositetrahedron_laevo_C1(33)))))/12;
-pentagonal_icositetrahedron_laevo_C2=pentagonal_icositetrahedron_laevo_C2(6*(18+pentagonal_icositetrahedron_laevo_C2(6*(9+pentagonal_icositetrahedron_laevo_C2(33)))+pentagonal_icositetrahedron_laevo_C2(6*(9-pentagonal_icositetrahedron_laevo_C2(33)))))/12;
-pentagonal_icositetrahedron_laevo_C3=pentagonal_icositetrahedron_laevo_C3(6*(14+pentagonal_icositetrahedron_laevo_C3(2*(1777+33*pentagonal_icositetrahedron_laevo_C3(33)))+pentagonal_icositetrahedron_laevo_C3(2*(1777-33*pentagonal_icositetrahedron_laevo_C3(33)))))/12;
+pentagonal_icositetrahedron_laevo_C0=sqrt(6*(cbrt(6*(9+sqrt(33)))+cbrt(6*(9-sqrt(33)))-6))/12;
+pentagonal_icositetrahedron_laevo_C1=sqrt(6*(6+cbrt(6*(9+sqrt(33)))+cbrt(6*(9-sqrt(33)))))/12;
+pentagonal_icositetrahedron_laevo_C2=sqrt(6*(18+cbrt(6*(9+sqrt(33)))+cbrt(6*(9-sqrt(33)))))/12;
+pentagonal_icositetrahedron_laevo_C3=sqrt(6*(14+cbrt(2*(1777+33*sqrt(33)))+cbrt(2*(1777-33*sqrt(33)))))/12;
 pentagonal_icositetrahedron_laevo_vertices=[
 [0.0,0.0,-pentagonal_icositetrahedron_laevo_C3],
 [0.0,0.0,pentagonal_icositetrahedron_laevo_C3],
@@ -2318,9 +2318,9 @@ pentagonal_icositetrahedron_laevo_edges=[
 [37,9],
 ];
 
-rhombic_triacontahedron_C0=rhombic_triacontahedron_C0(5)/4;
-rhombic_triacontahedron_C1=(5+rhombic_triacontahedron_C1(5))/8;
-rhombic_triacontahedron_C2=(5+3*rhombic_triacontahedron_C2(5))/8;
+rhombic_triacontahedron_C0=sqrt(5)/4;
+rhombic_triacontahedron_C1=(5+sqrt(5))/8;
+rhombic_triacontahedron_C2=(5+3*sqrt(5))/8;
 rhombic_triacontahedron_vertices=[
 [rhombic_triacontahedron_C1,0.0,rhombic_triacontahedron_C2],
 [rhombic_triacontahedron_C1,0.0,-rhombic_triacontahedron_C2],
@@ -2418,11 +2418,11 @@ rhombic_triacontahedron_edges=[
 [31,7],
 ];
 
-triakis_icosahedron_C0=5*(7+triakis_icosahedron_C0(5))/44;
-triakis_icosahedron_C1=5*(3+2*triakis_icosahedron_C1(5))/22;
-triakis_icosahedron_C2=(5+triakis_icosahedron_C2(5))/4;
-triakis_icosahedron_C3=5*(13+5*triakis_icosahedron_C3(5))/44;
-triakis_icosahedron_C4=(5+3*triakis_icosahedron_C4(5))/4;
+triakis_icosahedron_C0=5*(7+sqrt(5))/44;
+triakis_icosahedron_C1=5*(3+2*sqrt(5))/22;
+triakis_icosahedron_C2=(5+sqrt(5))/4;
+triakis_icosahedron_C3=5*(13+5*sqrt(5))/44;
+triakis_icosahedron_C4=(5+3*sqrt(5))/4;
 triakis_icosahedron_vertices=[
 [triakis_icosahedron_C2,0.0,triakis_icosahedron_C4],
 [triakis_icosahedron_C2,0.0,-triakis_icosahedron_C4],
@@ -2550,10 +2550,10 @@ triakis_icosahedron_edges=[
 [8,9],
 ];
 
-pentakis_dodecahedron_C0=3*(pentakis_dodecahedron_C0(5)-1)/4;
-pentakis_dodecahedron_C1=9*(9+pentakis_dodecahedron_C1(5))/76;
-pentakis_dodecahedron_C2=9*(7+5*pentakis_dodecahedron_C2(5))/76;
-pentakis_dodecahedron_C3=3*(1+pentakis_dodecahedron_C3(5))/4;
+pentakis_dodecahedron_C0=3*(sqrt(5)-1)/4;
+pentakis_dodecahedron_C1=9*(9+sqrt(5))/76;
+pentakis_dodecahedron_C2=9*(7+5*sqrt(5))/76;
+pentakis_dodecahedron_C3=3*(1+sqrt(5))/4;
 pentakis_dodecahedron_vertices=[
 [0.0,pentakis_dodecahedron_C0,pentakis_dodecahedron_C3],
 [0.0,pentakis_dodecahedron_C0,-pentakis_dodecahedron_C3],
@@ -2681,15 +2681,15 @@ pentakis_dodecahedron_edges=[
 [6,7],
 ];
 
-deltoidal_hexecontahedron_C0=(5-deltoidal_hexecontahedron_C0(5))/4;
-deltoidal_hexecontahedron_C1=(15+deltoidal_hexecontahedron_C1(5))/22;
-deltoidal_hexecontahedron_C2=deltoidal_hexecontahedron_C2(5)/2;
-deltoidal_hexecontahedron_C3=(5+deltoidal_hexecontahedron_C3(5))/6;
-deltoidal_hexecontahedron_C4=(5+4*deltoidal_hexecontahedron_C4(5))/11;
-deltoidal_hexecontahedron_C5=(5+deltoidal_hexecontahedron_C5(5))/4;
-deltoidal_hexecontahedron_C6=(5+3*deltoidal_hexecontahedron_C6(5))/6;
-deltoidal_hexecontahedron_C7=(25+9*deltoidal_hexecontahedron_C7(5))/22;
-deltoidal_hexecontahedron_C8=deltoidal_hexecontahedron_C8(5);
+deltoidal_hexecontahedron_C0=(5-sqrt(5))/4;
+deltoidal_hexecontahedron_C1=(15+sqrt(5))/22;
+deltoidal_hexecontahedron_C2=sqrt(5)/2;
+deltoidal_hexecontahedron_C3=(5+sqrt(5))/6;
+deltoidal_hexecontahedron_C4=(5+4*sqrt(5))/11;
+deltoidal_hexecontahedron_C5=(5+sqrt(5))/4;
+deltoidal_hexecontahedron_C6=(5+3*sqrt(5))/6;
+deltoidal_hexecontahedron_C7=(25+9*sqrt(5))/22;
+deltoidal_hexecontahedron_C8=sqrt(5);
 deltoidal_hexecontahedron_vertices=[
 [0.0,0.0,deltoidal_hexecontahedron_C8],
 [0.0,0.0,-deltoidal_hexecontahedron_C8],
@@ -2877,15 +2877,15 @@ deltoidal_hexecontahedron_edges=[
 [53,61],
 ];
 
-disdyakis_triacontahedron_C0=3*(15+disdyakis_triacontahedron_C0(5))/44;
-disdyakis_triacontahedron_C1=(5-disdyakis_triacontahedron_C1(5))/2;
-disdyakis_triacontahedron_C2=3*(5+4*disdyakis_triacontahedron_C2(5))/22;
-disdyakis_triacontahedron_C3=3*(5+disdyakis_triacontahedron_C3(5))/10;
-disdyakis_triacontahedron_C4=disdyakis_triacontahedron_C4(5);
-disdyakis_triacontahedron_C5=(75+27*disdyakis_triacontahedron_C5(5))/44;
-disdyakis_triacontahedron_C6=(15+9*disdyakis_triacontahedron_C6(5))/10;
-disdyakis_triacontahedron_C7=(5+disdyakis_triacontahedron_C7(5))/2;
-disdyakis_triacontahedron_C8=3*(5+4*disdyakis_triacontahedron_C8(5))/11;
+disdyakis_triacontahedron_C0=3*(15+sqrt(5))/44;
+disdyakis_triacontahedron_C1=(5-sqrt(5))/2;
+disdyakis_triacontahedron_C2=3*(5+4*sqrt(5))/22;
+disdyakis_triacontahedron_C3=3*(5+sqrt(5))/10;
+disdyakis_triacontahedron_C4=sqrt(5);
+disdyakis_triacontahedron_C5=(75+27*sqrt(5))/44;
+disdyakis_triacontahedron_C6=(15+9*sqrt(5))/10;
+disdyakis_triacontahedron_C7=(5+sqrt(5))/2;
+disdyakis_triacontahedron_C8=3*(5+4*sqrt(5))/11;
 disdyakis_triacontahedron_vertices=[
 [0.0,0.0,disdyakis_triacontahedron_C8],
 [0.0,0.0,-disdyakis_triacontahedron_C8],
@@ -3133,28 +3133,28 @@ disdyakis_triacontahedron_edges=[
 [53,61],
 ];
 
-pentagonal_hexecontahedron_laevo_phi=(1+pentagonal_hexecontahedron_laevo_phi(5))/2;
-pentagonal_hexecontahedron_laevo_x=pentagonal_hexecontahedron_laevo_x((pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_x(pentagonal_hexecontahedron_laevo_x-5/27))/2)+pentagonal_hexecontahedron_laevo_x((pentagonal_hexecontahedron_laevo_x-pentagonal_hexecontahedron_laevo_x(pentagonal_hexecontahedron_laevo_x-5/27))/2);
-pentagonal_hexecontahedron_laevo_C0=pentagonal_hexecontahedron_laevo_C0*pentagonal_hexecontahedron_laevo_C0(3-(pentagonal_hexecontahedron_laevo_C0^2))/2;
-pentagonal_hexecontahedron_laevo_C1=pentagonal_hexecontahedron_laevo_C1*pentagonal_hexecontahedron_laevo_C1((pentagonal_hexecontahedron_laevo_C1-1-(1/pentagonal_hexecontahedron_laevo_C1))*pentagonal_hexecontahedron_laevo_C1)/(2*pentagonal_hexecontahedron_laevo_C1);
-pentagonal_hexecontahedron_laevo_C2=pentagonal_hexecontahedron_laevo_C2*pentagonal_hexecontahedron_laevo_C2((pentagonal_hexecontahedron_laevo_C2-1-(1/pentagonal_hexecontahedron_laevo_C2))*pentagonal_hexecontahedron_laevo_C2)/2;
-pentagonal_hexecontahedron_laevo_C3=(pentagonal_hexecontahedron_laevo_C3^2)*pentagonal_hexecontahedron_laevo_C3*pentagonal_hexecontahedron_laevo_C3(3-(pentagonal_hexecontahedron_laevo_C3^2))/2;
-pentagonal_hexecontahedron_laevo_C4=pentagonal_hexecontahedron_laevo_C4*pentagonal_hexecontahedron_laevo_C4(1-pentagonal_hexecontahedron_laevo_C4+(1+pentagonal_hexecontahedron_laevo_C4)/pentagonal_hexecontahedron_laevo_C4)/2;
-pentagonal_hexecontahedron_laevo_C5=pentagonal_hexecontahedron_laevo_C5(pentagonal_hexecontahedron_laevo_C5*(pentagonal_hexecontahedron_laevo_C5+pentagonal_hexecontahedron_laevo_C5)+1)/(2*pentagonal_hexecontahedron_laevo_C5);
-pentagonal_hexecontahedron_laevo_C6=pentagonal_hexecontahedron_laevo_C6((pentagonal_hexecontahedron_laevo_C6+2)*pentagonal_hexecontahedron_laevo_C6+2)/(2*pentagonal_hexecontahedron_laevo_C6);
-pentagonal_hexecontahedron_laevo_C7=pentagonal_hexecontahedron_laevo_C7(-(pentagonal_hexecontahedron_laevo_C7^2)*(2+pentagonal_hexecontahedron_laevo_C7)+pentagonal_hexecontahedron_laevo_C7*(1+3*pentagonal_hexecontahedron_laevo_C7)+4)/2;
-pentagonal_hexecontahedron_laevo_C8=(1+pentagonal_hexecontahedron_laevo_C8)*pentagonal_hexecontahedron_laevo_C8(1+(1/pentagonal_hexecontahedron_laevo_C8))/(2*pentagonal_hexecontahedron_laevo_C8);
-pentagonal_hexecontahedron_laevo_C9=pentagonal_hexecontahedron_laevo_C9(2+3*pentagonal_hexecontahedron_laevo_C9-2*pentagonal_hexecontahedron_laevo_C9+(3/pentagonal_hexecontahedron_laevo_C9))/2;
-pentagonal_hexecontahedron_laevo_C10=pentagonal_hexecontahedron_laevo_C10((pentagonal_hexecontahedron_laevo_C10^2)*(392+225*pentagonal_hexecontahedron_laevo_C10)+pentagonal_hexecontahedron_laevo_C10*(249+670*pentagonal_hexecontahedron_laevo_C10)+(470+157*pentagonal_hexecontahedron_laevo_C10))/62;
-pentagonal_hexecontahedron_laevo_C11=pentagonal_hexecontahedron_laevo_C11*pentagonal_hexecontahedron_laevo_C11(pentagonal_hexecontahedron_laevo_C11*(pentagonal_hexecontahedron_laevo_C11+pentagonal_hexecontahedron_laevo_C11)+1)/(2*pentagonal_hexecontahedron_laevo_C11);
-pentagonal_hexecontahedron_laevo_C12=pentagonal_hexecontahedron_laevo_C12*pentagonal_hexecontahedron_laevo_C12((pentagonal_hexecontahedron_laevo_C12^2)+pentagonal_hexecontahedron_laevo_C12+1+pentagonal_hexecontahedron_laevo_C12)/(2*pentagonal_hexecontahedron_laevo_C12);
-pentagonal_hexecontahedron_laevo_C13=pentagonal_hexecontahedron_laevo_C13*pentagonal_hexecontahedron_laevo_C13((pentagonal_hexecontahedron_laevo_C13^2)+2*pentagonal_hexecontahedron_laevo_C13*pentagonal_hexecontahedron_laevo_C13+2)/(2*pentagonal_hexecontahedron_laevo_C13);
-pentagonal_hexecontahedron_laevo_C14=pentagonal_hexecontahedron_laevo_C14((pentagonal_hexecontahedron_laevo_C14^2)*(1+2*pentagonal_hexecontahedron_laevo_C14)-pentagonal_hexecontahedron_laevo_C14)/2;
-pentagonal_hexecontahedron_laevo_C15=pentagonal_hexecontahedron_laevo_C15*pentagonal_hexecontahedron_laevo_C15((pentagonal_hexecontahedron_laevo_C15^2)+pentagonal_hexecontahedron_laevo_C15)/2;
-pentagonal_hexecontahedron_laevo_C16=(pentagonal_hexecontahedron_laevo_C16^3)*pentagonal_hexecontahedron_laevo_C16(pentagonal_hexecontahedron_laevo_C16*(pentagonal_hexecontahedron_laevo_C16+pentagonal_hexecontahedron_laevo_C16)+1)/(2*(pentagonal_hexecontahedron_laevo_C16^2));
-pentagonal_hexecontahedron_laevo_C17=pentagonal_hexecontahedron_laevo_C17((pentagonal_hexecontahedron_laevo_C17^2)*(617+842*pentagonal_hexecontahedron_laevo_C17)+pentagonal_hexecontahedron_laevo_C17*(919+1589*pentagonal_hexecontahedron_laevo_C17)+(627+784*pentagonal_hexecontahedron_laevo_C17))/62;
-pentagonal_hexecontahedron_laevo_C18=(pentagonal_hexecontahedron_laevo_C18^2)*pentagonal_hexecontahedron_laevo_C18(pentagonal_hexecontahedron_laevo_C18*(pentagonal_hexecontahedron_laevo_C18+pentagonal_hexecontahedron_laevo_C18)+1)/(2*pentagonal_hexecontahedron_laevo_C18);
-pentagonal_hexecontahedron_laevo_C19=pentagonal_hexecontahedron_laevo_C19*pentagonal_hexecontahedron_laevo_C19(pentagonal_hexecontahedron_laevo_C19*(pentagonal_hexecontahedron_laevo_C19+pentagonal_hexecontahedron_laevo_C19)+1)/2;
+pentagonal_hexecontahedron_laevo_phi=(1+sqrt(5))/2;
+pentagonal_hexecontahedron_laevo_x=cbrt((pentagonal_hexecontahedron_laevo_phi+sqrt(pentagonal_hexecontahedron_laevo_phi-5/27))/2)+cbrt((pentagonal_hexecontahedron_laevo_phi-sqrt(pentagonal_hexecontahedron_laevo_phi-5/27))/2);
+pentagonal_hexecontahedron_laevo_C0=pentagonal_hexecontahedron_laevo_phi*sqrt(3-(pentagonal_hexecontahedron_laevo_x^2))/2;
+pentagonal_hexecontahedron_laevo_C1=pentagonal_hexecontahedron_laevo_phi*sqrt((pentagonal_hexecontahedron_laevo_x-1-(1/pentagonal_hexecontahedron_laevo_x))*pentagonal_hexecontahedron_laevo_phi)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C2=pentagonal_hexecontahedron_laevo_phi*sqrt((pentagonal_hexecontahedron_laevo_x-1-(1/pentagonal_hexecontahedron_laevo_x))*pentagonal_hexecontahedron_laevo_phi)/2;
+pentagonal_hexecontahedron_laevo_C3=(pentagonal_hexecontahedron_laevo_x^2)*pentagonal_hexecontahedron_laevo_phi*sqrt(3-(pentagonal_hexecontahedron_laevo_x^2))/2;
+pentagonal_hexecontahedron_laevo_C4=pentagonal_hexecontahedron_laevo_phi*sqrt(1-pentagonal_hexecontahedron_laevo_x+(1+pentagonal_hexecontahedron_laevo_phi)/pentagonal_hexecontahedron_laevo_x)/2;
+pentagonal_hexecontahedron_laevo_C5=sqrt(pentagonal_hexecontahedron_laevo_x*(pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_phi)+1)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C6=sqrt((pentagonal_hexecontahedron_laevo_x+2)*pentagonal_hexecontahedron_laevo_phi+2)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C7=sqrt(-(pentagonal_hexecontahedron_laevo_x^2)*(2+pentagonal_hexecontahedron_laevo_phi)+pentagonal_hexecontahedron_laevo_x*(1+3*pentagonal_hexecontahedron_laevo_phi)+4)/2;
+pentagonal_hexecontahedron_laevo_C8=(1+pentagonal_hexecontahedron_laevo_phi)*sqrt(1+(1/pentagonal_hexecontahedron_laevo_x))/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C9=sqrt(2+3*pentagonal_hexecontahedron_laevo_phi-2*pentagonal_hexecontahedron_laevo_x+(3/pentagonal_hexecontahedron_laevo_x))/2;
+pentagonal_hexecontahedron_laevo_C10=sqrt((pentagonal_hexecontahedron_laevo_x^2)*(392+225*pentagonal_hexecontahedron_laevo_phi)+pentagonal_hexecontahedron_laevo_x*(249+670*pentagonal_hexecontahedron_laevo_phi)+(470+157*pentagonal_hexecontahedron_laevo_phi))/62;
+pentagonal_hexecontahedron_laevo_C11=pentagonal_hexecontahedron_laevo_phi*sqrt(pentagonal_hexecontahedron_laevo_x*(pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_phi)+1)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C12=pentagonal_hexecontahedron_laevo_phi*sqrt((pentagonal_hexecontahedron_laevo_x^2)+pentagonal_hexecontahedron_laevo_x+1+pentagonal_hexecontahedron_laevo_phi)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C13=pentagonal_hexecontahedron_laevo_phi*sqrt((pentagonal_hexecontahedron_laevo_x^2)+2*pentagonal_hexecontahedron_laevo_x*pentagonal_hexecontahedron_laevo_phi+2)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C14=sqrt((pentagonal_hexecontahedron_laevo_x^2)*(1+2*pentagonal_hexecontahedron_laevo_phi)-pentagonal_hexecontahedron_laevo_phi)/2;
+pentagonal_hexecontahedron_laevo_C15=pentagonal_hexecontahedron_laevo_phi*sqrt((pentagonal_hexecontahedron_laevo_x^2)+pentagonal_hexecontahedron_laevo_x)/2;
+pentagonal_hexecontahedron_laevo_C16=(pentagonal_hexecontahedron_laevo_phi^3)*sqrt(pentagonal_hexecontahedron_laevo_x*(pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_phi)+1)/(2*(pentagonal_hexecontahedron_laevo_x^2));
+pentagonal_hexecontahedron_laevo_C17=sqrt((pentagonal_hexecontahedron_laevo_x^2)*(617+842*pentagonal_hexecontahedron_laevo_phi)+pentagonal_hexecontahedron_laevo_x*(919+1589*pentagonal_hexecontahedron_laevo_phi)+(627+784*pentagonal_hexecontahedron_laevo_phi))/62;
+pentagonal_hexecontahedron_laevo_C18=(pentagonal_hexecontahedron_laevo_phi^2)*sqrt(pentagonal_hexecontahedron_laevo_x*(pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_phi)+1)/(2*pentagonal_hexecontahedron_laevo_x);
+pentagonal_hexecontahedron_laevo_C19=pentagonal_hexecontahedron_laevo_phi*sqrt(pentagonal_hexecontahedron_laevo_x*(pentagonal_hexecontahedron_laevo_x+pentagonal_hexecontahedron_laevo_phi)+1)/2;
 pentagonal_hexecontahedron_laevo_vertices=[
 [-pentagonal_hexecontahedron_laevo_C0,-pentagonal_hexecontahedron_laevo_C1,-pentagonal_hexecontahedron_laevo_C19],
 [-pentagonal_hexecontahedron_laevo_C0,pentagonal_hexecontahedron_laevo_C1,pentagonal_hexecontahedron_laevo_C19],
@@ -3402,7 +3402,7 @@ pentagonal_hexecontahedron_laevo_edges=[
 [83,91],
 ];
 
-small_stellated_dodecahedron_C0=(small_stellated_dodecahedron_C0(5)-1)/4;
+small_stellated_dodecahedron_C0=(sqrt(5)-1)/4;
 small_stellated_dodecahedron_vertices=[
 [0.0,0.5,-small_stellated_dodecahedron_C0],
 [0.0,0.5,small_stellated_dodecahedron_C0],
@@ -3450,7 +3450,7 @@ small_stellated_dodecahedron_edges=[
 [8,9],
 ];
 
-great_icosahedron_C0=(great_icosahedron_C0(5)-1)/4;
+great_icosahedron_C0=(sqrt(5)-1)/4;
 great_icosahedron_vertices=[
 [0.0,-0.5,great_icosahedron_C0],
 [0.0,-0.5,-great_icosahedron_C0],
@@ -3498,7 +3498,7 @@ great_icosahedron_edges=[
 [8,9],
 ];
 
-great_dodecahedron_C0=(1+great_dodecahedron_C0(5))/4;
+great_dodecahedron_C0=(1+sqrt(5))/4;
 great_dodecahedron_vertices=[
 [0.5,0.0,great_dodecahedron_C0],
 [0.5,0.0,-great_dodecahedron_C0],
@@ -3546,8 +3546,8 @@ great_dodecahedron_edges=[
 [8,9],
 ];
 
-great_stellated_dodecahedron_C0=(3-great_stellated_dodecahedron_C0(5))/4;
-great_stellated_dodecahedron_C1=(great_stellated_dodecahedron_C1(5)-1)/4;
+great_stellated_dodecahedron_C0=(3-sqrt(5))/4;
+great_stellated_dodecahedron_C1=(sqrt(5)-1)/4;
 great_stellated_dodecahedron_vertices=[
 [0.5,0.0,great_stellated_dodecahedron_C0],
 [0.5,0.0,-great_stellated_dodecahedron_C0],
