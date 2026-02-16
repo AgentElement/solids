@@ -282,7 +282,13 @@ class Polyhedron:
             )
             tokenstream.append(Token(TokenType.EQ, None, -1, -1, -1))
             if constant in self.constant_exacts:
-                tokenstream += self.constant_exacts[constant]
+                for token in self.constant_exacts[constant]:
+                    if token.ttype == TokenType.NAME:
+                        tokenstream.append(
+                            Token(TokenType.NAME, f"{self.name}_{constant}", -1, -1, -1)
+                        )
+                    else:
+                        tokenstream.append(token)
             else:
                 tokenstream += self.constant_floats[constant]
             tokenstream.append(Token(TokenType.SEMI, None, -1, -1, -1))
@@ -316,6 +322,11 @@ class Polyhedron:
         return "".join([x.literal() for x in tokenstream])
 
 
+class ConstantRegion(Enum):
+    DEF = 0
+    WHERE = 1
+
+
 class Parser:
     def __init__(self, input) -> None:
         self.lexer = Lexer()
@@ -327,7 +338,9 @@ class Parser:
 
         self.constant_exacts = {}
         self.constant_floats = {}
-        self.constant_sequence = set()
+        self.constant_def_sequence = []
+        self.constant_where_sequence = []
+        self.constant_sequence = []
 
     def syntax_error(self):
         token = self.lexer.peek(0)
@@ -345,6 +358,7 @@ class Parser:
                 | TokenType.LPAREN
                 | TokenType.RPAREN
                 | TokenType.SLASH
+                | TokenType.CARET
             ):
                 return True
             case _:
@@ -392,9 +406,9 @@ class Parser:
         self.name = "_".join(names).lower()
 
     # constant_def := name = float \n
-    # constant_def := name = float = [int|name|*|(|)|+|/|*|] \n
-    # constant_def := name = [int|name|*|(|)|+|/|] \n
-    def constant_def(self):
+    # constant_def := name = float = [int|name|*|(|)|+|/|*|^] \n
+    # constant_def := name = [int|name|*|(|)|+|/|^] \n
+    def constant_def(self, region: ConstantRegion):
         const = self.expect(TokenType.NAME).lexeme
         floatv = ""
         exactv = []
@@ -420,9 +434,27 @@ class Parser:
 
         self.linebreak()
 
-        self.constant_sequence.add(const)
+        if region == ConstantRegion.DEF and const not in self.constant_def_sequence:
+            self.constant_def_sequence.append(const)
+        elif (
+            region == ConstantRegion.WHERE and const not in self.constant_where_sequence
+        ):
+            self.constant_where_sequence.append(const)
         self.constant_exacts[const] = exactv
         self.constant_floats[const] = floatv
+
+    # where_block := WHERE: constant_block
+    def where_block(self):
+        t1 = self.lexer.peek(1)
+        t2 = self.lexer.peek(2)
+        if (
+            t1.ttype == TokenType.NAME
+            and t1.lexeme == "WHERE"
+            and t2.ttype == TokenType.COLON
+        ):
+            self.expect(TokenType.NAME)
+            self.expect(TokenType.COLON)
+            return self.constant_block(ConstantRegion.WHERE)
 
     # value := -? [name|int|float]
     def value(self) -> list[Token]:
@@ -477,7 +509,7 @@ class Parser:
         self.faces.append(face)
 
     # constant_block := constant_seq*
-    def constant_block(self):
+    def constant_block(self, region: ConstantRegion):
         t1 = self.lexer.peek(1).ttype
         t2 = self.lexer.peek(2).ttype
         t3 = self.lexer.peek(3).ttype
@@ -498,7 +530,7 @@ class Parser:
                 or self.is_expression_ttype(t5)
             )
         ):
-            self.constant_def()
+            self.constant_def(region)
             t1 = self.lexer.peek(1).ttype
             t2 = self.lexer.peek(2).ttype
             t3 = self.lexer.peek(3).ttype
@@ -526,10 +558,15 @@ class Parser:
     # polyhedron := name_def constant_block vertex_block face_block EOF
     def polyhedron(self) -> Polyhedron:
         self.name_def()
-        self.constant_block()
+        self.constant_block(ConstantRegion.DEF)
+        self.where_block()
         self.vertex_block()
         self.face_block()
         self.expect(TokenType.EOF)
+
+        self.constant_sequence = (
+            self.constant_where_sequence + self.constant_def_sequence
+        )
 
         return Polyhedron(
             self.name,
