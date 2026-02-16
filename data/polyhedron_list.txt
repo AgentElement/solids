@@ -9,13 +9,13 @@
 08-a-truncated-octahedron
 09-a-rhombicuboctahedron
 10-a-truncated-cuboctahedron
-11-a-snub-cube
+11-a-lsnub-cube
 12-a-icosidodecahedron
 13-a-truncated-dodecahedron
 14-a-truncated-icosahedron
 15-a-rhombicosidodecahedron
 16-a-truncated-icosidodecahedron
-17-a-snub-dodecahedron
+17-a-lsnub-dodecahedron
 18-c-triakis-tetrahedron
 19-c-rhombic-dodecahedron
 20-c-triakis-octahedron
@@ -28,7 +28,7 @@
 27-c-pentakis-dodecahedron
 28-c-deltoidal-hexecontahedron
 29-c-disdyakis-triacontahedron
-30-c-pentagonal-hexecontahedron
+30-c-lpentagonal-hexecontahedron
 31-k-small-stellated-dodecahedron
 32-k-great-icosahedron
 33-k-great-dodecahedron
