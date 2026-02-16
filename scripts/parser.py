@@ -302,7 +302,7 @@ class Polyhedron:
             Token(TokenType.LSQUARE, None, -1, -1, -1),
             Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
-        for start, end in self.edges:
+        for start, end in sorted(self.edges):
             tokenstream.append(Token(TokenType.LSQUARE, None, -1, -1, -1))
             tokenstream.append(Token(TokenType.NAME, str(start), -1, -1, -1))
             tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
@@ -454,7 +454,7 @@ class Parser:
         ):
             self.expect(TokenType.NAME)
             self.expect(TokenType.COLON)
-            return self.constant_block(ConstantRegion.WHERE)
+            self.constant_block(ConstantRegion.WHERE)
 
     # value := -? [name|int|float]
     def value(self) -> list[Token]:
@@ -508,13 +508,14 @@ class Parser:
 
         self.faces.append(face)
 
-    # constant_block := constant_seq*
+    # constant_block := constant_def*
     def constant_block(self, region: ConstantRegion):
         t1 = self.lexer.peek(1).ttype
         t2 = self.lexer.peek(2).ttype
         t3 = self.lexer.peek(3).ttype
         t4 = self.lexer.peek(4).ttype
         t5 = self.lexer.peek(5).ttype
+        t6 = self.lexer.peek(6).ttype
         while (
             t1 == TokenType.NAME
             and t2 == TokenType.EQ
@@ -529,6 +530,12 @@ class Parser:
                 or t5 == TokenType.NEWLINE
                 or self.is_expression_ttype(t5)
             )
+            and (
+                t6 == TokenType.NAME
+                or t6 == TokenType.NEWLINE
+                or t6 == TokenType.EQ
+                or self.is_expression_ttype(t6)
+            )
         ):
             self.constant_def(region)
             t1 = self.lexer.peek(1).ttype
@@ -536,6 +543,7 @@ class Parser:
             t3 = self.lexer.peek(3).ttype
             t4 = self.lexer.peek(4).ttype
             t5 = self.lexer.peek(5).ttype
+            t6 = self.lexer.peek(6).ttype
 
     # vertex_block := vertex_def*
     def vertex_block(self):
