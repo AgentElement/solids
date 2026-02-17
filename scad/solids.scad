@@ -115,10 +115,50 @@ catalans = [
    [pentagonal_hexecontahedron_laevo_vertices,  pentagonal_hexecontahedron_laevo_edges,  "pentagonal_hexecontahedron_laevo"],
 ];
 
+archimedians = [
+   [truncated_tetrahedron_vertices,       truncated_tetrahedron_edges,       "truncated_tetrahedron"],
+   [cuboctahedron_vertices,               cuboctahedron_edges,               "cuboctahedron"],
+   [truncated_cube_vertices,              truncated_cube_edges,              "truncated_cube"],
+   [truncated_octahedron_vertices,        truncated_octahedron_edges,        "truncated_octahedron"],
+   [rhombicuboctahedron_vertices,         rhombicuboctahedron_edges,         "rhombicuboctahedron"],
+   [truncated_cuboctahedron_vertices,     truncated_cuboctahedron_edges,     "truncated_cuboctahedron"],
+   [snub_cube_laevo_vertices,             snub_cube_laevo_edges,             "snub_cube_laevo"],
+   [icosidodecahedron_vertices,           icosidodecahedron_edges,           "icosidodecahedron"],
+   [truncated_dodecahedron_vertices,      truncated_dodecahedron_edges,      "truncated_dodecahedron"],
+   [truncated_icosahedron_vertices,       truncated_icosahedron_edges,       "truncated_icosahedron"],
+   [rhombicosidodecahedron_vertices,      rhombicosidodecahedron_edges,      "rhombicosidodecahedron"],
+   [truncated_icosidodecahedron_vertices, truncated_icosidodecahedron_edges, "truncated_icosidodecahedron"],
+   [snub_dodecahedron_laevo_vertices,     snub_dodecahedron_laevo_edges,     "snub_dodecahedron_laevo"],
+];
+
+platonics = [
+   [tetrahedron_vertices,  tetrahedron_edges,  "tetrahedron"],
+   [cube_vertices,         cube_edges,         "cube"],
+   [octahedron_vertices,   octahedron_edges,   "octahedron"],
+   [dodecahedron_vertices, dodecahedron_edges, "dodecahedron"],
+   [icosahedron_vertices,  icosahedron_edges,  "icosahedron"],
+];
+
 
 for (i = [0:len(catalans)-1]) {
     catalan = catalans[i];
-    translate(1000 * i * [1, 0, 0]) {
+    translate(1000 * [i, 0, 0]) {
         vertex_only_hedron(catalan[0], catalan[1], name=catalan[2]);
+    }
+}
+
+for (i = [0:len(archimedians)-1]) {
+    archimedian = archimedians[i];
+    echo(archimedian[2]);
+    echo(archimedian);
+    translate(1000 * [i, 1, 0]) {
+        vertex_only_hedron(archimedian[0], archimedian[1], name=archimedian[2]);
+    }
+}
+
+for (i = [0:len(platonics)-1]) {
+    platonic = platonics[i];
+    translate(1000 * [i, 2, 0]) {
+        vertex_only_hedron(platonic[0], platonic[1], name=platonic[2]);
     }
 }
