@@ -3,18 +3,53 @@ use <vertex_holders.scad>
 include <geometry.scad>
 include <constants.scad>
 
+function count_distinct(arr) =
+    len(arr) == 0 ? [] :
+    let(
+        pivot = arr[0],
+        remaining = [for (x = arr) if (abs(x - pivot) > 0.001) x],
+        count = len(arr) - len(remaining)
+    )
+    concat(
+        [[pivot, count]],
+        count_distinct(remaining)
+    );
+
+
+module print_edge_lengths(vertices, edges, figs, oset, name="") {
+    figs = annotated_vertex_figures(vertices, edges);
+    holder_offset = best_offset(figs);
+    norm_dist = RADIUS / max_dist(vertices);
+    lengths = [for (edge = edges)
+        let (
+            a = vertices[edge[0]] * norm_dist,
+            b = vertices[edge[1]] * norm_dist,
+            v = b - a,
+            dist = norm(v),
+            length = dist - 2 * oset
+        ) length
+    ];
+    distincts = count_distinct(lengths);
+    for (pair = distincts) {
+        length = pair[0];
+        count = pair[1];
+        echo(name, length, count);
+    }
+}
+
 // Create a cylinder between two points 'a' and 'b' with radius 'r'.
-// Optionally, offset cylinder inward by 'o'.
+// Optionally, offset cylinder inward by 'o'. Echo the length + name
 module edge(a, b, d, o=0) {
     v = b - a;
     dist = norm(v);
+    length = dist - 2 * o;
     if (dist > 2 * o) {
         phi = atan2(v[1], v[0]);
         theta = acos(v[2] / dist);
         translate(a)
             rotate([0, theta, phi])
             translate([0, 0, o])
-            cylinder(h = dist - 2 * o, d = d);
+            cylinder(h = length, d = d);
     }
 }
 
@@ -33,12 +68,13 @@ module unit_sphere() {
 function max_dist(v) = max([for(i=v) norm(i)]);
 function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 
-module vertex_only_hedron(vertices, edges) {
+module vertex_only_hedron(vertices, edges, name="") {
     figs = annotated_vertex_figures(vertices, edges);
 
     holder_offset = best_offset(figs);
 
     norm_dist = RADIUS / max_dist(vertices);
+    print_edge_lengths(vertices, edges, figs, holder_offset, name);
     hedron(vertices, edges, norm_dist, holder_offset+WALL_THICKNESS);
 
     colors = ["red", "green", "blue"];
@@ -64,25 +100,25 @@ module vertex_only_hedron(vertices, edges) {
 
 
 catalans = [
-   [triakis_tetrahedron_vertices,             triakis_tetrahedron_edges],
-   [rhombic_dodecahedron_vertices,            rhombic_dodecahedron_edges],
-   [triakis_octahedron_vertices,              triakis_octahedron_edges],
-   [tetrakis_hexahedron_vertices,             tetrakis_hexahedron_edges],
-   // [deltoidal_icositetrahedron_vertices,      deltoidal_icositetrahedron_edges],
-   [disdyakis_dodecahedron_vertices,          disdyakis_dodecahedron_edges],
-   [pentagonal_icositetrahedron_laevo_vertices, pentagonal_icositetrahedron_laevo_edges],
-   [rhombic_triacontahedron_vertices,         rhombic_triacontahedron_edges],
-   [triakis_icosahedron_vertices,             triakis_icosahedron_edges],
-   [pentakis_dodecahedron_vertices,           pentakis_dodecahedron_edges],
-   [deltoidal_hexecontahedron_vertices,       deltoidal_hexecontahedron_edges],
-   [disdyakis_triacontahedron_vertices,       disdyakis_triacontahedron_edges],
-   // [pentagonal_hexecontahedron_vertices,      pentagonal_hexecontahedron_edges],
+   [triakis_tetrahedron_vertices,               triakis_tetrahedron_edges,               "triakis_tetrahedron"],
+   [rhombic_dodecahedron_vertices,              rhombic_dodecahedron_edges,              "rhombic_dodecahedron"],
+   [triakis_octahedron_vertices,                triakis_octahedron_edges,                "triakis_octahedron"],
+   [tetrakis_hexahedron_vertices,               tetrakis_hexahedron_edges,               "tetrakis_hexahedron"],
+   [deltoidal_icositetrahedron_vertices,        deltoidal_icositetrahedron_edges,        "deltoidal_icositetrahedron"],
+   [disdyakis_dodecahedron_vertices,            disdyakis_dodecahedron_edges,            "disdyakis_dodecahedron"],
+   [pentagonal_icositetrahedron_laevo_vertices, pentagonal_icositetrahedron_laevo_edges, "pentagonal_icositetrahedron_laevo"],
+   [rhombic_triacontahedron_vertices,           rhombic_triacontahedron_edges,           "rhombic_triacontahedron"],
+   [triakis_icosahedron_vertices,               triakis_icosahedron_edges,               "triakis_icosahedron"],
+   [pentakis_dodecahedron_vertices,             pentakis_dodecahedron_edges,             "pentakis_dodecahedron"],
+   [deltoidal_hexecontahedron_vertices,         deltoidal_hexecontahedron_edges,         "deltoidal_hexecontahedron"],
+   [disdyakis_triacontahedron_vertices,         disdyakis_triacontahedron_edges,         "disdyakis_triacontahedron"],
+   [pentagonal_hexecontahedron_laevo_vertices,  pentagonal_hexecontahedron_laevo_edges,  "pentagonal_hexecontahedron_laevo"],
 ];
 
 
 for (i = [0:len(catalans)-1]) {
     catalan = catalans[i];
     translate(1000 * i * [1, 0, 0]) {
-        vertex_only_hedron(catalan[0], catalan[1]);
+        vertex_only_hedron(catalan[0], catalan[1], name=catalan[2]);
     }
 }
