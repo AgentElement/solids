@@ -1,1 +1,1 @@
-function cbrt(x) = x ^ (1/3);
+function cbrt(x) = sign(x) * (abs(x) ^ (1/3));
