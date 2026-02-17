@@ -30,10 +30,11 @@ module print_edge_lengths(vertices, edges, figs, oset, name="") {
         ) length
     ];
     distincts = count_distinct(lengths);
-    for (pair = distincts) {
+    for (i = [0:len(distincts)-1]) {
+        pair = distincts[i];
         length = pair[0];
         count = pair[1];
-        echo(name, length, count);
+        echo(str(name, "_", i), length, count);
     }
 }
 
@@ -53,7 +54,7 @@ module edge(a, b, d, o=0) {
     }
 }
 
-module hedron(coordinates, edges, norm_dist, o=0) {
+module hedron_edges(coordinates, edges, norm_dist, o=0) {
     for (edge = edges) {
         a = coordinates[edge[0]] * norm_dist;
         b = coordinates[edge[1]] * norm_dist;
@@ -68,14 +69,14 @@ module unit_sphere() {
 function max_dist(v) = max([for(i=v) norm(i)]);
 function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 
-module vertex_only_hedron(vertices, edges, name="") {
+module hedron(vertices, edges, name="") {
     figs = annotated_vertex_figures(vertices, edges);
 
     holder_offset = best_offset(figs);
 
     norm_dist = RADIUS / max_dist(vertices);
     print_edge_lengths(vertices, edges, figs, holder_offset, name);
-    hedron(vertices, edges, norm_dist, holder_offset+WALL_THICKNESS);
+    hedron_edges(vertices, edges, norm_dist, holder_offset+WALL_THICKNESS);
 
     colors = ["red", "green", "blue"];
 
@@ -142,23 +143,18 @@ platonics = [
 
 for (i = [0:len(catalans)-1]) {
     catalan = catalans[i];
-    translate(1000 * [i, 0, 0]) {
-        vertex_only_hedron(catalan[0], catalan[1], name=catalan[2]);
-    }
+    translate(1000 * [i, 0, 0])
+        hedron(catalan[0], catalan[1], name=catalan[2]);
 }
 
 for (i = [0:len(archimedians)-1]) {
     archimedian = archimedians[i];
-    echo(archimedian[2]);
-    echo(archimedian);
-    translate(1000 * [i, 1, 0]) {
-        vertex_only_hedron(archimedian[0], archimedian[1], name=archimedian[2]);
-    }
+    translate(1000 * [i, 1, 0])
+        hedron(archimedian[0], archimedian[1], name=archimedian[2]);
 }
 
 for (i = [0:len(platonics)-1]) {
     platonic = platonics[i];
-    translate(1000 * [i, 2, 0]) {
-        vertex_only_hedron(platonic[0], platonic[1], name=platonic[2]);
-    }
+    translate(1000 * [i, 2, 0])
+        hedron(platonic[0], platonic[1], name=platonic[2]);
 }
