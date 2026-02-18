@@ -89,8 +89,6 @@ module hedron(vertices, edges, name="") {
         tag = figs[i][4];
 
         translate(norm_dist * vertex) {
-            // Draw Origin
-            color(colors[tag]) sphere(0.1);
             // Draw Vectors
             rotate(euler)
             color(colors[tag])

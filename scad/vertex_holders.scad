@@ -104,9 +104,7 @@ module all_vertex_holders(vertices, edges) {
         vertex = figs[i][3];
         tag = figs[i][4];
 
-        translate(EDGE_LENGTH * [i, 0, 0]) {
-            // Draw Origin
-            color(colors[tag]) sphere(0.1);
+        translate(RADIUS * [i, 0, 0]) {
             // Draw Vectors
             color(colors[tag])
             vertex_holder(std, holder_offset);
