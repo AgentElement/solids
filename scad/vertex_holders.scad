@@ -113,4 +113,30 @@ module all_vertex_holders(vertices, edges) {
 }
 
 
-all_vertex_holders(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges);
+
+module one_vertex_holder(vertices, edges, tag) {
+    figs = annotated_vertex_figures(vertices, edges);
+    holder_offset = best_offset(figs);
+    colors = ["red", "green", "blue"];
+
+    // Filter to find the indices of all figures where tag == 1
+    matches = [for (i = [0:len(figs)-1]) if (figs[i][4] == tag) i];
+
+    // Only proceed if at least one match was found
+    if (len(matches) > 0) {
+        // Select the index of the *first* match found
+        i = matches[0];
+        // Extract data for that specific index
+        fig = figs[i][0];
+        std = figs[i][1];
+        euler = figs[i][2];
+        vertex = figs[i][3];
+        tag = figs[i][4]; // This is guaranteed to be 1
+
+        // Draw Vectors
+        color(colors[tag])
+        vertex_holder(std, holder_offset);
+    }
+}
+
+one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, $fn=60);
