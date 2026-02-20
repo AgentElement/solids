@@ -2,6 +2,21 @@ use <annotated_vertex_figures.scad>
 include <geometry.scad>
 include <constants.scad>
 
+function base_length(oset, angle, height) =
+    let (
+        l = oset + TUBE_DEPTH,
+        r = EDGE_DIAMETER/2+WALL_THICKNESS,
+        theta = MAX_PRINT_OVERHANG_ANGLE,
+        height_adjustment = h * (cot(angle) - cot(theta)),
+        length = r > l * tan(angle) ?
+            l * sin(angle) :
+            (l * sin(theta-angle) + r * cos(theta-angle)) / sin(theta)
+    )
+    length - height_adjustment;
+
+
+// angle between a vector and the xy plane
+function angle_xy(v) = atan2(v.z, norm([v.x, v.y]));
 
 // Convert a unit vector to euler angles
 function direction_to_euler(v) =
@@ -78,6 +93,12 @@ module tubular_vertex_holder(vecs, oset=0) {
     difference() {
         for(v=vecs) {
             rotation = direction_to_euler(v);
+            zrot = [0, 0, 90+rotation.z];
+            angle = angle_xy(v);
+            echo(angle);
+            echo(oset+TUBE_DEPTH);
+            echo(blen);
+            blen = base_length(oset, angle);
             translate(oset * v)
             rotate(rotation)
             union() {
@@ -88,6 +109,17 @@ module tubular_vertex_holder(vecs, oset=0) {
                 }
                 translate([0, 0, -oset])
                 cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
+            }
+            hull() {
+                rotate(rotation)
+                difference() {
+                    cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH+oset);
+                    translate([EDGE_DIAMETER/2-50, 0, 0])
+                    cube([100, 100, 100], center=true);
+                }
+                rotate(zrot)
+                translate([0, -blen, 0])
+                #cube([EDGE_DIAMETER, 0.01, 0.01], center=true);
             }
         }
         translate([0, 0, -50+cutoff])
@@ -148,8 +180,12 @@ module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
 }
 
 
+<<<<<<< HEAD
 
 module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
+=======
+module one_vertex_holder(vertices, edges, tag) {
+>>>>>>> ad3d616 (feat: first pass at support-free vertex holders)
     figs = annotated_vertex_figures(vertices, edges);
     holder_offset =
         oset == "best" ? best_offset(figs) :
