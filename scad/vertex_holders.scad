@@ -96,7 +96,6 @@ module all_vertex_holders(vertices, edges) {
     holder_offset = best_offset(figs);
     colors = ["red", "green", "blue"];
 
-    // Visualize the result
     for(i=[0:len(figs)-1]) {
         fig = figs[i][0];
         std = figs[i][1];
@@ -104,11 +103,9 @@ module all_vertex_holders(vertices, edges) {
         vertex = figs[i][3];
         tag = figs[i][4];
 
-        translate(RADIUS * [i, 0, 0]) {
-            // Draw Vectors
-            color(colors[tag])
-            vertex_holder(std, holder_offset);
-        }
+        translate(RADIUS * [i, 0, 0])
+        color(colors[tag])
+        vertex_holder(std, holder_offset);
     }
 }
 
@@ -133,7 +130,6 @@ module one_vertex_holder(vertices, edges, tag) {
         vertex = figs[i][3];
         tag = figs[i][4]; // This is guaranteed to be 1
 
-        // Draw Vectors
         color(colors[tag])
         vertex_holder(std, holder_offset);
     }

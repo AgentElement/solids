@@ -47,10 +47,11 @@ module edge(a, b, d, o=0) {
     if (dist > 2 * o) {
         phi = atan2(v[1], v[0]);
         theta = acos(v[2] / dist);
+
         translate(a)
-            rotate([0, theta, phi])
-            translate([0, 0, o])
-            cylinder(h = length, d = d);
+        rotate([0, theta, phi])
+        translate([0, 0, o])
+        cylinder(h = length, d = d);
     }
 }
 
@@ -88,12 +89,10 @@ module hedron(vertices, edges, name="") {
         vertex = figs[i][3];
         tag = figs[i][4];
 
-        translate(norm_dist * vertex) {
-            // Draw Vectors
-            rotate(euler)
-            color(colors[tag])
-            vertex_holder(std, holder_offset);
-        }
+        translate(norm_dist * vertex)
+        rotate(euler)
+        color(colors[tag])
+        vertex_holder(std, holder_offset);
     }
 }
 
