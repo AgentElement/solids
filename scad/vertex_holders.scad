@@ -89,11 +89,43 @@ module vertex_holder(vecs, holder_offset=0) {
     }
 }
 
-// vertex_holders();
+module conical_vertex_holder(vecs, holder_offset=0) {
+    v0 = vecs[0];
+    v1 = min_cos_dist(v0, vecs);
+    oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
+    rad = oset * norm([v0[0], v0[1]]);
+    cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
-module all_vertex_holders(vertices, edges) {
+    difference() {
+        hull() {
+            for(v=vecs) {
+                rotation = direction_to_euler(v);
+                translate(oset * v)
+                rotate(rotation)
+                translate([0, 0, -oset])
+                linear_extrude(TUBE_DEPTH+oset)
+                circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
+            }
+        }
+        for (v=vecs) {
+            rotation = direction_to_euler(v);
+            translate(oset * v)
+            rotate(rotation)
+            translate([0, 0, WALL_THICKNESS])
+            linear_extrude(TUBE_DEPTH)
+            circle(d=EDGE_DIAMETER);
+        }
+        translate([0, 0, -50+cutoff])
+        cube([100, 100, 100], center=true);
+    }
+}
+
+module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
-    holder_offset = best_offset(figs);
+    holder_offset =
+        oset == "best" ? best_offset(figs) :
+        oset == "global" ? GLOBAL_CATALAN_OFFSET :
+        GLOBAL_CATALAN_OFFSET;
     colors = ["red", "green", "blue"];
 
     for(i=[0:len(figs)-1]) {
@@ -105,15 +137,22 @@ module all_vertex_holders(vertices, edges) {
 
         translate(RADIUS * [i, 0, 0])
         color(colors[tag])
-        vertex_holder(std, holder_offset);
+        if (type == "tubular") {
+            vertex_holder(std, holder_offset);
+        } else if (type == "conical") {
+            conical_vertex_holder(std, holder_offset);
+        }
     }
 }
 
 
 
-module one_vertex_holder(vertices, edges, tag) {
+module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
-    holder_offset = best_offset(figs);
+    holder_offset =
+        oset == "best" ? best_offset(figs) :
+        oset == "global" ? GLOBAL_CATALAN_OFFSET :
+        GLOBAL_CATALAN_OFFSET;
     colors = ["red", "green", "blue"];
 
     // Filter to find the indices of all figures where tag == 1
@@ -131,8 +170,12 @@ module one_vertex_holder(vertices, edges, tag) {
         tag = figs[i][4]; // This is guaranteed to be 1
 
         color(colors[tag])
-        vertex_holder(std, holder_offset);
+        if (type == "tubular") {
+            vertex_holder(std, holder_offset);
+        } else if (type == "conical") {
+            conical_vertex_holder(std, holder_offset);
+        }
     }
 }
 
-one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, $fn=60);
+one_vertex_holder(rhombic_dodecahedron_vertices, rhombic_dodecahedron_edges, 0, type="conical", oset="best", $fn=60);

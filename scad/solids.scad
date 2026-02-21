@@ -18,7 +18,6 @@ function count_distinct(arr) =
 
 module print_edge_lengths(vertices, edges, figs, oset, name="") {
     figs = annotated_vertex_figures(vertices, edges);
-    holder_offset = best_offset(figs);
     norm_dist = RADIUS / max_dist(vertices);
     lengths = [for (edge = edges)
         let (
@@ -34,7 +33,7 @@ module print_edge_lengths(vertices, edges, figs, oset, name="") {
         pair = distincts[i];
         length = pair[0];
         count = pair[1];
-        echo(str(name, "_", i), length, count);
+        echo(str(name, "_", i), length, count, oset);
     }
 }
 
@@ -70,10 +69,13 @@ module unit_sphere() {
 function max_dist(v) = max([for(i=v) norm(i)]);
 function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 
-module hedron(vertices, edges, name="") {
+module hedron(vertices, edges, name="", type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
 
-    holder_offset = best_offset(figs);
+    holder_offset =
+        oset == "best" ? best_offset(figs) :
+        oset == "global" ? GLOBAL_CATALAN_OFFSET :
+        GLOBAL_CATALAN_OFFSET;
 
     norm_dist = RADIUS / max_dist(vertices);
     print_edge_lengths(vertices, edges, figs, holder_offset, name);
@@ -92,7 +94,11 @@ module hedron(vertices, edges, name="") {
         translate(norm_dist * vertex)
         rotate(euler)
         color(colors[tag])
-        vertex_holder(std, holder_offset);
+        if (type == "tubular") {
+            vertex_holder(std, holder_offset);
+        } else if (type == "conical") {
+            conical_vertex_holder(std, holder_offset);
+        }
     }
 }
 
