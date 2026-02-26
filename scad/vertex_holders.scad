@@ -7,12 +7,12 @@ function base_length(oset, angle, height) =
         l = oset + TUBE_DEPTH,
         r = EDGE_DIAMETER/2+WALL_THICKNESS,
         theta = MAX_PRINT_OVERHANG_ANGLE,
-        height_adjustment = h * (cot(angle) - cot(theta)),
+        height_adjustment = height * (1/tan(angle) - 1/tan(theta)),
         length = r > l * tan(angle) ?
             l * sin(angle) :
-            (l * sin(theta-angle) + r * cos(theta-angle)) / sin(theta)
+            (l * sin(theta-angle) + r * cos(theta-angle)) / sin(theta) - height_adjustment
     )
-    length - height_adjustment;
+    length;
 
 
 // angle between a vector and the xy plane
@@ -95,10 +95,10 @@ module tubular_vertex_holder(vecs, oset=0) {
             rotation = direction_to_euler(v);
             zrot = [0, 0, 90+rotation.z];
             angle = angle_xy(v);
+            blen = base_length(oset, angle, cutoff);
             echo(angle);
             echo(oset+TUBE_DEPTH);
             echo(blen);
-            blen = base_length(oset, angle);
             translate(oset * v)
             rotate(rotation)
             union() {
@@ -216,4 +216,8 @@ module one_vertex_holder(vertices, edges, tag) {
     }
 }
 
+<<<<<<< HEAD
 one_vertex_holder(rhombic_dodecahedron_vertices, rhombic_dodecahedron_edges, 0, type="conical", oset="best", $fn=60);
+=======
+one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 1, $fn=60);
+>>>>>>> de4fb74 (fix: cot isn't a thing in openscad)

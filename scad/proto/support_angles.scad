@@ -1,7 +1,8 @@
-phi = 20;
+phi = 10;
 r = 10;
 l = 50;
 theta = 60;
+h = 10;
 
 rotate([0, 90-phi, 0])
 cylinder(h=l);
@@ -13,14 +14,20 @@ rotate([0, 180-phi, 0])
 cylinder(h=r);
 
 
-function test(r, l, theta, phi) =
-    r > l * tan(phi) ? 0 :
-        (l * sin(theta-phi) + r * cos(theta-phi)) / sin(theta);
+function length(r, l, theta, phi, h) =
+    r > l * tan(phi) ? l * sin(theta) :
+        (l * sin(theta-phi) + r * cos(theta-phi)) / sin(theta) - h * (1/tan(phi) - 1/tan(theta));
 
-test = test(r, l, theta, phi);
+function height(r, l, theta, phi, h) =
+    r > l * tan(phi) ? 0 : h;
+
+length = length(r, l, theta, phi, h);
+height = height(r, l, theta, phi, h);
+
+translate([h / tan(phi), 0, height])
 rotate([0, 90, 0])
-cylinder(h=test);
+cylinder(h=length);
 
-translate([test, 0, 0])
+translate([h / tan(phi) + length, 0, height])
 rotate([0, 90-theta, 0])
 cylinder(h=20);
