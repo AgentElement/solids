@@ -72,7 +72,7 @@ function best_offset(figs) =
     )
     best;
 
-module vertex_holder(vecs, oset=0) {
+module tubular_vertex_holder(vecs, oset=0) {
     cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
     difference() {
@@ -173,7 +173,7 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
 
         color(colors[tag])
         if (type == "tubular") {
-            vertex_holder(std, holder_offset);
+            tubular_vertex_holder(std, holder_offset);
         } else if (type == "conical") {
             conical_vertex_holder(std, holder_offset);
         }

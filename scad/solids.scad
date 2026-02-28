@@ -95,7 +95,7 @@ module hedron(vertices, edges, name="", type="tubular", oset="best") {
         rotate(euler)
         color(colors[tag])
         if (type == "tubular") {
-            vertex_holder(std, holder_offset);
+            tubular_vertex_holder(std, holder_offset);
         } else if (type == "conical") {
             conical_vertex_holder(std, holder_offset);
         }
