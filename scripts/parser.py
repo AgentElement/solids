@@ -331,6 +331,58 @@ class ConstantRegion(Enum):
     WHERE = 1
 
 
+class StlParser:
+    def __init__(self, input: str) -> None:
+        self.input = input
+
+    def parse(self) -> Polyhedron:
+        vertices = {}
+        faces = []
+
+        lines = self.input.split("\n")
+        vertex_counter = 0
+
+        for line in lines:
+            line = line.strip()
+            if "vertex" in line:
+                parts = line.split()
+                if len(parts) >= 4:
+                    x, y, z = parts[1], parts[2], parts[3]
+                    vertex_name = f"v{vertex_counter}"
+                    vertices[vertex_name] = [
+                        Token(TokenType.LSQUARE, None, -1, -1, -1),
+                        Token(TokenType.FLOAT, x, -1, -1, -1),
+                        Token(TokenType.COMMA, None, -1, -1, -1),
+                        Token(TokenType.FLOAT, y, -1, -1, -1),
+                        Token(TokenType.COMMA, None, -1, -1, -1),
+                        Token(TokenType.FLOAT, z, -1, -1, -1),
+                        Token(TokenType.RSQUARE, None, -1, -1, -1),
+                    ]
+                    vertex_counter += 1
+            elif (
+                "facet" in line
+                or "outer" in line
+                or "endloop" in line
+                or "endfacet" in line
+            ):
+                continue
+            elif line.startswith("facet normal"):
+                continue
+
+        for i in range(0, len(vertices) - 2, 3):
+            face = [str(i), str(i + 1), str(i + 2)]
+            faces.append(face)
+
+        return Polyhedron(
+            name="stl_model",
+            vertices=vertices,
+            faces=faces,
+            constant_exacts={},
+            constant_floats={},
+            constant_sequence=[],
+        )
+
+
 class Parser:
     def __init__(self, input) -> None:
         self.lexer = Lexer()
@@ -595,6 +647,15 @@ class Parser:
             print(tok.ttype, tok.lexeme)
 
 
+def get_parser(filepath: str):
+    if filepath.lower().endswith(".stl"):
+        with open(filepath) as f:
+            return StlParser(f.read())
+    else:
+        with open(filepath) as f:
+            return Parser(f.read())
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", help="Directory containing polyhedron files")
@@ -602,15 +663,19 @@ def main():
     args = parser.parse_args()
 
     if args.file:
-        with open(args.file) as f:
-            parser = Parser(f.read())
-        polyhedron = parser.polyhedron()
+        p = get_parser(args.file)
+        if isinstance(p, StlParser):
+            polyhedron = p.parse()
+        else:
+            polyhedron = p.polyhedron()
         print(polyhedron.openscad())
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
-            with open(filepath) as f:
-                parser = Parser(f.read())
-            polyhedron = parser.polyhedron()
+            p = get_parser(filepath)
+            if isinstance(p, StlParser):
+                polyhedron = p.parse()
+            else:
+                polyhedron = p.polyhedron()
             print(polyhedron.openscad())
 
 
