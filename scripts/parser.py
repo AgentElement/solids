@@ -331,6 +331,9 @@ class ConstantRegion(Enum):
     WHERE = 1
 
 
+class StlError(Exception):
+    pass
+
 class StlParser:
     def __init__(self, input: str) -> None:
         self.input = input
@@ -344,33 +347,38 @@ class StlParser:
 
         for line in lines:
             line = line.strip()
-            if "vertex" in line:
+            if line.startswith("vertex"):
                 parts = line.split()
-                if len(parts) >= 4:
+                if len(parts) < 4:
+                    raise StlError("Malformed stl file")
+                try:
                     x, y, z = parts[1], parts[2], parts[3]
-                    vertex_name = f"v{vertex_counter}"
-                    vertices[vertex_name] = [
-                        Token(TokenType.LSQUARE, None, -1, -1, -1),
-                        Token(TokenType.FLOAT, x, -1, -1, -1),
-                        Token(TokenType.COMMA, None, -1, -1, -1),
-                        Token(TokenType.FLOAT, y, -1, -1, -1),
-                        Token(TokenType.COMMA, None, -1, -1, -1),
-                        Token(TokenType.FLOAT, z, -1, -1, -1),
-                        Token(TokenType.RSQUARE, None, -1, -1, -1),
-                    ]
-                    vertex_counter += 1
-            elif (
-                "facet" in line
-                or "outer" in line
-                or "endloop" in line
-                or "endfacet" in line
-            ):
-                continue
-            elif line.startswith("facet normal"):
-                continue
+                    float(x)
+                    float(y)
+                    float(z)
+                except ValueError:
+                    raise StlError("Malformed stl file")
+                vertex_name = f"v{vertex_counter}"
+                vertices[vertex_name] = [
+                    Token(TokenType.LSQUARE, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, x, -1, -1, -1),
+                    Token(TokenType.COMMA, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, y, -1, -1, -1),
+                    Token(TokenType.COMMA, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, z, -1, -1, -1),
+                    Token(TokenType.RSQUARE, None, -1, -1, -1),
+                ]
+                vertex_counter += 1
 
-        for i in range(0, len(vertices) - 2, 3):
-            face = [str(i), str(i + 1), str(i + 2)]
+        if len(vertices) < 3:
+            raise StlError("Malformed stl file")
+
+        if len(vertices) % 3 != 0:
+            raise StlError("Malformed stl file")
+
+        face_vertices = list(vertices.keys())
+        for i in range(0, len(face_vertices) - 2, 3):
+            face = [face_vertices[i], face_vertices[i + 1], face_vertices[i + 2]]
             faces.append(face)
 
         return Polyhedron(
