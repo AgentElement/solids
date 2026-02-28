@@ -36,11 +36,20 @@ function axis_offset(v0, v1, R, r) =
 // Dot product
 function dot(a, b) = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 
+// Find the vector most aligned with -z (lowest vector)
+function lowest_vector(vecs) =
+    let(
+        z_components = [for(v=vecs) v[2]],
+        min_z = min(z_components),
+        min_idx = search(min_z, z_components)[0]
+    )
+    vecs[min_idx];
+
 // Return a pair of vectors with minimum cosine distance between them
 function min_cos_dist_pair(vecs) =
     let(
         n = len(vecs),
-        pairs = [for(i=[0:n-2]) for(j=[i+1:n-1]) [i, j, dot(vecs[i], vecs[j]) / (norm(vecs[i]) * norm(vecs[j]))]],
+        pairs = [for(i=[0:n-2]) for(j=[i+1:n-1]) [i, j, abs(dot(vecs[i], vecs[j]) / (norm(vecs[i]) * norm(vecs[j])))]],
         ix = search(min([for(p=pairs) p[2]]), [for(p=pairs) p[2]])[0]
     )
     [vecs[pairs[ix][0]], vecs[pairs[ix][1]]];
@@ -63,13 +72,8 @@ function best_offset(figs) =
     )
     best;
 
-module vertex_holder(vecs, holder_offset=0) {
-    pair = min_cos_dist_pair(vecs);
-    v0 = pair[0];
-    v1 = pair[1];
-    oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
-    rad = oset * norm([v0[0], v0[1]]);
-    cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
+module vertex_holder(vecs, oset=0) {
+    cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
     difference() {
         for(v=vecs) {
@@ -91,13 +95,8 @@ module vertex_holder(vecs, holder_offset=0) {
     }
 }
 
-module conical_vertex_holder(vecs, holder_offset=0) {
-    pair = min_cos_dist_pair(vecs);
-    v0 = pair[0];
-    v1 = pair[1];
-    oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
-    rad = oset * norm([v0[0], v0[1]]);
-    cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
+module conical_vertex_holder(vecs, oset=0) {
+    cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
     difference() {
         hull() {
