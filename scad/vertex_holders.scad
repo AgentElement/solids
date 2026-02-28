@@ -36,18 +36,20 @@ function axis_offset(v0, v1, R, r) =
 // Dot product
 function dot(a, b) = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 
-// Return the vector with minimum cosine distance to t; assume that t = vecs[0]
-function min_cos_dist(t, vecs) =
-    let (
-        scores = [for(i=[1:len(vecs)-1]) dot(t,vecs[i]) / norm(vecs[i])],
-        ix = search(max(scores), scores)[0]
+// Return a pair of vectors with minimum cosine distance between them
+function min_cos_dist_pair(vecs) =
+    let(
+        n = len(vecs),
+        pairs = [for(i=[0:n-2]) for(j=[i+1:n-1]) [i, j, dot(vecs[i], vecs[j]) / (norm(vecs[i]) * norm(vecs[j]))]],
+        ix = search(min([for(p=pairs) p[2]]), [for(p=pairs) p[2]])[0]
     )
-    vecs[ix+1];
+    [vecs[pairs[ix][0]], vecs[pairs[ix][1]]];
 
 function offset_from_vecs(vecs) =
     let (
-        v0 = vecs[0],
-        v1 = min_cos_dist(v0, vecs)
+        pair = min_cos_dist_pair(vecs),
+        v0 = pair[0],
+        v1 = pair[1]
     )
     axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
 
@@ -62,13 +64,13 @@ function best_offset(figs) =
     best;
 
 module vertex_holder(vecs, holder_offset=0) {
-    v0 = vecs[0];
-    v1 = min_cos_dist(v0, vecs);
+    pair = min_cos_dist_pair(vecs);
+    v0 = pair[0];
+    v1 = pair[1];
     oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
     rad = oset * norm([v0[0], v0[1]]);
     cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
-    // cylinder(r=rad, h=WALL_THICKNESS);
     difference() {
         for(v=vecs) {
             rotation = direction_to_euler(v);
@@ -90,8 +92,9 @@ module vertex_holder(vecs, holder_offset=0) {
 }
 
 module conical_vertex_holder(vecs, holder_offset=0) {
-    v0 = vecs[0];
-    v1 = min_cos_dist(v0, vecs);
+    pair = min_cos_dist_pair(vecs);
+    v0 = pair[0];
+    v1 = pair[1];
     oset = holder_offset == 0 ? axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2) : holder_offset;
     rad = oset * norm([v0[0], v0[1]]);
     cutoff = cutoff_height(v0, oset, EDGE_DIAMETER/2+WALL_THICKNESS);
