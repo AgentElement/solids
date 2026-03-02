@@ -15,11 +15,32 @@
     ),
     abstract: [
       This paper presents VertexPrint, a method that allows the rapid
-      fabrication of sparse and easily resizable 3D models. VertexPrint
-      operates on meshes and achieves its sparsity by printing out small joint
-      components positioned at vertices and substitutes connecting edges with
-      cut-to-length struts. Models can be resized by rescaling struts, without
-      reprinting vertex pieces.
+      fabrication of sparse and easily resizable 3D models. Operating on
+      low-poly meshes, VertexPrint achieves its sparsity by printing out small
+      joint components positioned at vertices and substituting connecting edges
+      with cut-to-length struts. Models can be resized by rescaling struts,
+      without reprinting vertex pieces. As struts can be made of inexpensive
+      materials considerably stronger than printed parts, the resulting models
+      can be scaled to sizes significantly larger than the limited volumes of
+      conventional 3D printers.
     ],
     bibliography: bibliography("refs.bib"),
 )
+
+= Introduction
+
+= Related Work
+== Low-Fidelity Fabrication
+== Large-Volume 3D Printing
+
+= VertexPrint
+== How VertexPrint Works
+== Mechanical design of vertex pieces
+
+= Implementation
+
+= Validation
+
+= Conclusion
+
+= Acknowledgements
