@@ -3,7 +3,7 @@
 #import "@preview/cetz:0.3.2"
 
 #show: ams-article.with(
-  title: [VertexPrint: 3D-printed joint-and-strut parts for sparse, resizable models],
+  title: [VertexPrint: 3D-printed joint-and-strut constructions for sparse, resizable models],
     authors: (
       (
         name: "Devansh Vimal",
@@ -31,7 +31,10 @@
 
 = Related Work
 == Low-Fidelity Fabrication
+_Low fidelity fabrication_
+
 == Large-Volume 3D Printing
+== Printing wireframes
 
 = VertexPrint
 == How VertexPrint Works
