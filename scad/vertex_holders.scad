@@ -54,11 +54,18 @@ function min_cos_dist_pair(vecs) =
     )
     [vecs[pairs[ix][0]], vecs[pairs[ix][1]]];
 
+// Return the vector with minimum cosine distance to t; assume that t = vecs[0]
+function min_cos_dist(t, vecs) =
+    let (
+        scores = [for(i=[1:len(vecs)-1]) dot(t,vecs[i]) / norm(vecs[i])],
+        ix = search(max(scores), scores)[0]
+    )
+    vecs[ix+1];
+
 function offset_from_vecs(vecs) =
     let (
-        pair = min_cos_dist_pair(vecs),
-        v0 = pair[0],
-        v1 = pair[1]
+        v0 = vecs[0],
+        v1 = min_cos_dist(v0, vecs)
     )
     axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
 
@@ -84,7 +91,7 @@ module tubular_vertex_holder(vecs, oset=0) {
                 linear_extrude(TUBE_DEPTH)
                 difference() {
                     circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
-                    circle(d=EDGE_DIAMETER);
+                    circle(d=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT);
                 }
                 translate([0, 0, -oset])
                 cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
@@ -115,7 +122,7 @@ module conical_vertex_holder(vecs, oset=0) {
             rotate(rotation)
             translate([0, 0, WALL_THICKNESS])
             linear_extrude(TUBE_DEPTH)
-            circle(d=EDGE_DIAMETER);
+            circle(d=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT);
         }
         translate([0, 0, -50+cutoff])
         cube([100, 100, 100], center=true);
@@ -140,7 +147,7 @@ module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
         translate(RADIUS * [i, 0, 0])
         color(colors[tag])
         if (type == "tubular") {
-            vertex_holder(std, holder_offset);
+            tubular_vertex_holder(std, holder_offset);
         } else if (type == "conical") {
             conical_vertex_holder(std, holder_offset);
         }
@@ -173,11 +180,11 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
 
         color(colors[tag])
         if (type == "tubular") {
-            tubular_vertex_holder(std, holder_offset);
+            tubular_vertex_holder(std, oset=holder_offset);
         } else if (type == "conical") {
-            conical_vertex_holder(std, holder_offset);
+            conical_vertex_holder(std, oset=holder_offset);
         }
     }
 }
 
-one_vertex_holder(rhombic_dodecahedron_vertices, rhombic_dodecahedron_edges, 0, type="conical", oset="best", $fn=60);
+one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, type="tubular", oset="best", $fn=60);
