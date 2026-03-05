@@ -180,12 +180,7 @@ module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
 }
 
 
-<<<<<<< HEAD
-
 module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
-=======
-module one_vertex_holder(vertices, edges, tag) {
->>>>>>> ad3d616 (feat: first pass at support-free vertex holders)
     figs = annotated_vertex_figures(vertices, edges);
     holder_offset =
         oset == "best" ? best_offset(figs) :
@@ -216,8 +211,4 @@ module one_vertex_holder(vertices, edges, tag) {
     }
 }
 
-<<<<<<< HEAD
 one_vertex_holder(rhombic_dodecahedron_vertices, rhombic_dodecahedron_edges, 0, type="conical", oset="best", $fn=60);
-=======
-one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 1, $fn=60);
->>>>>>> de4fb74 (fix: cot isn't a thing in openscad)
