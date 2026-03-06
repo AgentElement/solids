@@ -57,14 +57,14 @@ function lowest_vector(vecs) =
     )
     vecs[min_idx];
 
-// Return a pair of vectors with minimum cosine distance between them
-function min_cos_dist_pair(vecs) =
+// Return a pair of vectors with minimum angle between them
+function min_angle_pair(v, i=0, j=1, b=[-2]) =
+    i >= len(v)-1 ? [b[1], b[2]] :
     let(
-        n = len(vecs),
-        pairs = [for(i=[0:n-2]) for(j=[i+1:n-1]) [i, j, abs(dot(vecs[i], vecs[j]) / (norm(vecs[i]) * norm(vecs[j])))]],
-        ix = search(min([for(p=pairs) p[2]]), [for(p=pairs) p[2]])[0]
+        c = (v[i] * v[j]) / (norm(v[i]) * norm(v[j])),
+        nb = c > b[0] ? [c, v[i], v[j]] : b
     )
-    [vecs[pairs[ix][0]], vecs[pairs[ix][1]]];
+    j + 1 < len(v) ? min_angle_pair(v, i, j+1, nb) : min_angle_pair(v, i+1, i+2, nb);
 
 // Return the vector with minimum cosine distance to t; assume that t = vecs[0]
 function min_cos_dist(t, vecs) =
@@ -76,8 +76,9 @@ function min_cos_dist(t, vecs) =
 
 function offset_from_vecs(vecs) =
     let (
-        v0 = vecs[0],
-        v1 = min_cos_dist(v0, vecs)
+        pair = min_angle_pair(vecs),
+        v0 = pair[0],
+        v1 = pair[1]
     )
     axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
 
@@ -222,4 +223,4 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     }
 }
 
-one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, type="tubular", oset="best", $fn=60);
+one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 0, type="tubular", oset="best", $fn=60);
