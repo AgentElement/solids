@@ -3,7 +3,7 @@ include <geometry.scad>
 include <constants.scad>
 
 
-// lowest point on the top surface of a cylinder
+// Lowest point on the top surface of a cylinder
 function lowest_point_top_surface_cylinder(l, r, v) = 
     let(
         uv = v / norm(v),
@@ -11,8 +11,8 @@ function lowest_point_top_surface_cylinder(l, r, v) =
         down = [0, 0, -1],
         proj = down - (down * uv) * uv
     )
-    (norm(proj) < 1e-9) 
-        ? center + [r, 0, 0] 
+    (norm(proj) < 1e-9)
+        ? center + [r, 0, 0]
         : center + r * (proj / norm(proj));
 
 // Convert a unit vector to euler angles
@@ -102,26 +102,30 @@ module tubular_vertex_holder(vecs, oset=0) {
 
             base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
 
-            hull() {
-                translate(-base_inset * [v.x, v.y, 0])
-                translate((oset+TUBE_DEPTH) * v)
-                translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff])
-                rotate(rotation)
-                cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
+            // Add support structure if v sits below the minimum overhang angle
+            if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
+                hull() {
+                    translate(-base_inset * [v.x, v.y, 0])
+                    translate((oset+TUBE_DEPTH) * v)
+                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff])
+                    rotate(rotation)
+                    cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
 
-                translate(oset * v)
-                rotate(rotation)
-                difference() {
-                    union() {
-                        cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH);
-                        translate([0, 0, -oset])
-                        cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
+                    translate(oset * v)
+                    rotate(rotation)
+                    difference() {
+                        union() {
+                            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH);
+                            translate([0, 0, -oset])
+                            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
+                        }
+                        translate([-50+(EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT)/2, 0, 0])
+                        cube([100, 100, 100], center=true);
                     }
-                    translate([-50+(EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT)/2, 0, 0])
-                    cube([100, 100, 100], center=true);
                 }
             }
 
+            // Tubes
             translate(oset * v)
             rotate(rotation)
             union() {
@@ -133,6 +137,8 @@ module tubular_vertex_holder(vecs, oset=0) {
                 cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
             }
         }
+
+        // Flat bottom plane
         translate([0, 0, -50+cutoff])
         cube([100, 100, 100], center=true);
     }
@@ -223,4 +229,4 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     }
 }
 
-one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 0, type="tubular", oset="best", $fn=60);
+one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, type="tubular", oset="best", $fn=60);
