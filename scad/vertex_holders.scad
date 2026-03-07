@@ -95,11 +95,15 @@ function best_offset(figs) =
 module tubular_vertex_holder(vecs, oset=0) {
     cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
 
+    // If no offset is specified, select a local offset
+    if (oset == 0) {
+        oset = offset_from_vecs(vecs);
+    }
+
     difference() {
         for(v=vecs) {
             lowest_top_point = lowest_point_top_surface_cylinder(oset+TUBE_DEPTH, EDGE_DIAMETER/2+WALL_THICKNESS, v);
             rotation = direction_to_euler(v);
-
             base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
 
             // Add support structure if v sits below the minimum overhang angle
@@ -203,6 +207,7 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     holder_offset =
         oset == "best" ? best_offset(figs) :
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
+        oset == "local" ? 0 :
         GLOBAL_CATALAN_OFFSET;
     colors = ["red", "green", "blue"];
 
