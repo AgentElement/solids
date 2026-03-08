@@ -4,6 +4,8 @@ import argparse
 import os
 import glob
 
+import numpy as np
+
 
 class TokenType(Enum):
     NAME = 0
