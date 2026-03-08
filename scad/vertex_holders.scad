@@ -4,7 +4,7 @@ include <constants.scad>
 
 
 // Lowest point on the top surface of a cylinder
-function lowest_point_top_surface_cylinder(l, r, v) = 
+function lowest_point_top_surface_cylinder(l, r, v) =
     let(
         uv = v / norm(v),
         center = uv * l,
@@ -45,9 +45,6 @@ function axis_offset(v0, v1, R, r) =
     max(l_side, l_base);
 
 
-// Dot product
-function dot(a, b) = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-
 // Find the vector most aligned with -z (lowest vector)
 function lowest_vector(vecs) =
     let(
@@ -69,7 +66,7 @@ function min_angle_pair(v, i=0, j=1, b=[-2]) =
 // Return the vector with minimum cosine distance to t; assume that t = vecs[0]
 function min_cos_dist(t, vecs) =
     let (
-        scores = [for(i=[1:len(vecs)-1]) dot(t,vecs[i]) / norm(vecs[i])],
+        scores = [for(i=[1:len(vecs)-1]) (t * vecs[i]) / norm(vecs[i])],
         ix = search(max(scores), scores)[0]
     )
     vecs[ix+1];
