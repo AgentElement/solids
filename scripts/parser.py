@@ -350,6 +350,140 @@ class Polyhedron:
         tokenstream += self.openscad_edges()
         return "".join([x.literal() for x in tokenstream])
 
+    def _vf_signature(self, vecs):
+        precision = 100000
+        n = len(vecs)
+        dots = sorted(
+            [
+                round(np.dot(vecs[i], vecs[j]) * precision)
+                for i in range(n)
+                for j in range(i, n)
+            ]
+        )
+        triples = sorted(
+            [
+                round(np.dot(np.cross(vecs[i], vecs[j]), vecs[k]) * precision)
+                for i in range(n)
+                for j in range(n)
+                for k in range(n)
+            ]
+        )
+        return dots + triples
+
+    def _vf_tag(self, list):
+        if not list:
+            return []
+        tags = []
+        tag = 0
+        for i, item in enumerate(list):
+            if i == 0 or item[0] != list[i - 1][0]:
+                tag = i
+            tags.append(tag)
+        return tags
+
+    def _vf_matrix_to_rotation(self, m):
+        m_arr = np.array(m)
+        sy = np.sqrt(m_arr[0, 0] ** 2 + m_arr[1, 0] ** 2)
+        singular = sy < 1e-6
+        if not singular:
+            return [
+                float(np.atan2(m_arr[2, 1], m_arr[2, 2])),
+                float(np.atan2(-m_arr[2, 0], sy)),
+                float(np.atan2(m_arr[1, 0], m_arr[0, 0])),
+            ]
+        else:
+            if m_arr[2, 0] < 0:
+                return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), 90, 0]
+            else:
+                return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
+
+    def mean_reorient(self, vecs, target=np.array([0, 0, 1])):
+        vecs_arr = np.array(vecs)
+        mean = np.sum(vecs_arr, axis=0)
+        nm = np.linalg.norm(mean)
+        if nm < 1e-9:
+            return [vecs_arr.tolist(), [0, 0, 0]]
+        u_mean = mean / nm
+        axis = np.cross(u_mean, target)
+        len_axis = np.linalg.norm(axis)
+        dot_val = np.dot(u_mean, target)
+        if len_axis < 1e-6:
+            if dot_val > 0:
+                return [vecs_arr.tolist(), [0, 0, 0]]
+            else:
+                flipped = np.array([np.array([v[0], -v[1], -v[2]]) for v in vecs_arr])
+                return [flipped.tolist(), [180, 0, 0]]
+        u = axis / len_axis
+        c = dot_val
+        s = len_axis
+        C = 1 - c
+        R = np.array(
+            [
+                [
+                    c + u[0] * u[0] * C,
+                    u[0] * u[1] * C - u[2] * s,
+                    u[0] * u[2] * C + u[1] * s,
+                ],
+                [
+                    u[1] * u[0] * C + u[2] * s,
+                    c + u[1] * u[1] * C,
+                    u[1] * u[2] * C - u[0] * s,
+                ],
+                [
+                    u[2] * u[0] * C - u[1] * s,
+                    u[2] * u[1] * C + u[0] * s,
+                    c + u[2] * u[2] * C,
+                ],
+            ]
+        )
+        euler = self._vf_matrix_to_rotation(R.T)
+        rotated = np.array([R @ v for v in vecs_arr])
+        return [rotated.tolist(), euler]
+
+    def annotated_vertex_figures(self):
+        vertex_keys = sorted(self.vertices.keys())
+        vertices_arr = np.array([v for v in vertex_keys])
+
+        edges_list = [list(e) for e in self.edges]
+
+        raw_figs = []
+        for i in range(len(vertices_arr)):
+            neighbors = []
+            for e in edges_list:
+                if e[0] == i:
+                    neighbors.append(e[1])
+                elif e[1] == i:
+                    neighbors.append(e[0])
+            vecs = [(vertices_arr[n] - vertices_arr[i]) for n in neighbors]
+            vecs = [
+                v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
+            ]
+            raw_figs.append(vecs)
+
+        signed = []
+        for i in range(len(vertices_arr)):
+            fig = raw_figs[i]
+            std = self.mean_reorient(fig)
+            tuple_entry = [self._vf_signature(fig), fig, std, vertices_arr[i].tolist()]
+            signed.append(tuple_entry)
+
+        signed.sort(key=lambda x: x[0])
+
+        tagged = self._vf_tag(signed)
+
+        annotated_vertex_figures = []
+        for i in range(len(vertices_arr)):
+            entry = [
+                signed[i][1],
+                signed[i][2][0],
+                signed[i][2][1],
+                signed[i][3],
+                tagged[i],
+            ]
+            annotated_vertex_figures.append(entry)
+
+        return annotated_vertex_figures
+
 
 class ConstantRegion(Enum):
     DEF = 0
