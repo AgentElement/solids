@@ -276,6 +276,7 @@ class Polyhedron:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
+                v1, v2 = int(v1), int(v2)
                 edges.add((v1, v2) if v1 < v2 else (v2, v1))
         return edges
 
@@ -444,9 +445,10 @@ class Polyhedron:
 
     def annotated_vertex_figures(self):
         vertex_keys = sorted(self.vertices.keys())
-        vertices_arr = np.array([v for v in vertex_keys])
+        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
 
         edges_list = [list(e) for e in self.edges]
+        print(edges_list)
 
         raw_figs = []
         for i in range(len(vertices_arr)):
