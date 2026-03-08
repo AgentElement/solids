@@ -235,7 +235,8 @@ class Polyhedron:
     def __init__(
         self, name, vertices, faces, constant_exacts, constant_floats, constant_sequence
     ) -> None:
-        self.vertices = vertices
+        self.vertex_tokenstream = vertices
+
         self.faces = faces
         self.name = name
 
@@ -243,7 +244,31 @@ class Polyhedron:
         self.constant_floats = constant_floats
         self.constant_sequence = constant_sequence
 
+        self.vertices = self.evaluate_vertices()
         self.edges = self.make_edgelist()
+
+    def evaluate_vertices(self):
+        vertices = {}
+        for vertex, token_list in self.vertex_tokenstream.items():
+            evaluated = []
+            neg = 1
+            for token in token_list:
+                match token.ttype:
+                    case TokenType.LSQUARE | TokenType.RSQUARE:
+                        continue
+                    case TokenType.COMMA:
+                        neg = 1
+                    case TokenType.MINUS:
+                        neg = -1
+                    case TokenType.FLOAT:
+                        evaluated.append(neg * float(token.lexeme))
+                    case TokenType.NAME:
+                        evaluated.append(neg * self.constant_floats[token.lexeme])
+                    case _:
+                        print("bad")
+
+            vertices[vertex] = evaluated
+        return vertices
 
     def make_edgelist(self) -> set[tuple[int, int]]:
         edges = set()
@@ -259,7 +284,7 @@ class Polyhedron:
             Token(TokenType.LSQUARE, None, -1, -1, -1),
             Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
-        for vertex, token_list in self.vertices.items():
+        for vertex, token_list in self.vertex_tokenstream.items():
             for token in token_list:
                 if token.ttype == TokenType.NAME:
                     token.lexeme = f"{self.name}_{token.lexeme}"
@@ -333,6 +358,7 @@ class ConstantRegion(Enum):
 
 class StlError(Exception):
     pass
+
 
 class StlParser:
     def __init__(self, input: str) -> None:
@@ -474,13 +500,13 @@ class Parser:
     # constant_def := name = [int|name|*|(|)|+|/|^] \n
     def constant_def(self, region: ConstantRegion):
         const = self.expect(TokenType.NAME).lexeme
-        floatv = ""
+        floatv = 0.0
         exactv = []
 
         self.expect(TokenType.EQ)
         ttype = self.lexer.peek(1).ttype
         if ttype == TokenType.FLOAT:
-            floatv = self.expect(TokenType.FLOAT).ttype
+            floatv = self.expect(TokenType.FLOAT).literal()
             ttype = self.lexer.peek(1).ttype
 
             if ttype == TokenType.NEWLINE:
@@ -504,8 +530,10 @@ class Parser:
             region == ConstantRegion.WHERE and const not in self.constant_where_sequence
         ):
             self.constant_where_sequence.append(const)
-        self.constant_exacts[const] = exactv
-        self.constant_floats[const] = floatv
+        if const not in self.constant_exacts:
+            self.constant_exacts[const] = exactv
+        if const not in self.constant_floats:
+            self.constant_floats[const] = float(floatv)
 
     # where_block := WHERE: constant_block
     def where_block(self):
