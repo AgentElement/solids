@@ -251,7 +251,7 @@ class VertexFigure:
         return bool(self.normal)
 
     def normal(self) -> Optional[np.ndarray]:
-        pass
+        return np.sum(self.vecs, axis=0)
 
     def matrix_to_rotation(self, m):
         m_arr = np.array(m)
@@ -268,12 +268,11 @@ class VertexFigure:
         else:
             return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
 
-    def reorient_to(self, target=np.array([0, 0, 1])):
-        mean = np.sum(self.vecs, axis=0)
-        nm = np.linalg.norm(mean)
-        if nm < 1e-9:
+    def reorient_to(self, normal, target=np.array([0, 0, 1])):
+        nn = np.linalg.norm(normal)
+        if nn < 1e-9:
             return [self.vecs.tolist(), [0, 0, 0]]
-        u_mean = mean / nm
+        u_mean = normal / nn
         axis = np.cross(u_mean, target)
         len_axis = np.linalg.norm(axis)
         dot_val = np.dot(u_mean, target)
@@ -482,7 +481,9 @@ class Polyhedron:
                 tags[signature] = tag
                 tag += 1
 
-            vertex_figures.append(VertexFigure(np.array(vecs), neighbors, tags))
+            vertex_figures.append(
+                VertexFigure(np.array(vecs), neighbors, tags[signature])
+            )
 
         return vertex_figures
 
