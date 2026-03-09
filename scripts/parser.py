@@ -31,6 +31,8 @@ class TokenType(Enum):
     SEMI = 20
 
 
+# A subset of openscad's tokens, plus tokens for David McCooey's visual
+# polyhedra files
 class Token:
     def __init__(
         self, ttype: TokenType, lexeme: Optional[str], pos: int, line: int, column: int
@@ -84,154 +86,6 @@ class Token:
 
     def __str__(self) -> str:
         return f"{self.pos} {self.ttype} {self.lexeme}"
-
-
-class Lexer:
-    def __init__(self) -> None:
-        self.tokenstream = []
-        self.pos = 0
-
-    @staticmethod
-    def munch_num(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
-        lexeme = ""
-        offset = 0
-        while input[pos + offset].isnumeric():
-            lexeme += input[pos + offset]
-            offset += 1
-
-        if input[pos + offset] != ".":
-            return (Token(TokenType.INT, lexeme, pos, line, column), offset)
-        offset += 1
-        lexeme += "."
-
-        while input[pos + offset].isnumeric():
-            lexeme += input[pos + offset]
-            offset += 1
-
-        return (Token(TokenType.FLOAT, lexeme, pos, line, column), offset)
-
-    @staticmethod
-    def munch_name(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
-        if not input[pos].isalpha():
-            raise Exception(f"Cannot parse name at position {pos}")
-
-        lexeme = input[pos]
-        offset = 1
-
-        while input[pos + offset].isalnum():
-            lexeme += input[pos + offset]
-            offset += 1
-
-        return (Token(TokenType.NAME, lexeme, pos, line, column), offset)
-
-    def lex(self, input: str):
-        i = 0
-        line = 1
-        column = 1
-        while i < len(input):
-            match input[i]:
-                case "(":
-                    self.tokenstream.append(
-                        Token(TokenType.LPAREN, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case ")":
-                    self.tokenstream.append(
-                        Token(TokenType.RPAREN, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "{":
-                    self.tokenstream.append(
-                        Token(TokenType.LBRACE, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "}":
-                    self.tokenstream.append(
-                        Token(TokenType.RBRACE, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "=":
-                    self.tokenstream.append(Token(TokenType.EQ, None, i, line, column))
-                    i += 1
-                    column += 1
-                case "-":
-                    self.tokenstream.append(
-                        Token(TokenType.MINUS, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case ",":
-                    self.tokenstream.append(
-                        Token(TokenType.COMMA, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "*":
-                    self.tokenstream.append(
-                        Token(TokenType.STAR, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "+":
-                    self.tokenstream.append(
-                        Token(TokenType.PLUS, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "/":
-                    self.tokenstream.append(
-                        Token(TokenType.SLASH, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "^":
-                    self.tokenstream.append(
-                        Token(TokenType.CARET, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case ":":
-                    self.tokenstream.append(
-                        Token(TokenType.COLON, None, i, line, column)
-                    )
-                    i += 1
-                    column += 1
-                case "\n":
-                    self.tokenstream.append(
-                        Token(TokenType.NEWLINE, None, i, line, column)
-                    )
-                    i += 1
-                    line += 1
-                    column = 1
-                case " " | "\t":
-                    i += 1
-                    column += 1
-                case "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9":
-                    (tok, offset) = self.munch_num(input, i, line, column)
-                    self.tokenstream.append(tok)
-                    i += offset
-                    column += offset
-                case _:
-                    (tok, offset) = self.munch_name(input, i, line, column)
-                    self.tokenstream.append(tok)
-                    i += offset
-                    column += offset
-        self.tokenstream.append(Token(TokenType.EOF, None, i, line, column))
-
-    def get(self) -> Token:
-        token = self.tokenstream[self.pos]
-        self.pos += 1
-        return token
-
-    def peek(self, i: int) -> Token:
-        assert i >= 0
-        assert self.pos + i <= len(self.tokenstream)
-        token = self.tokenstream[self.pos + i - 1]
-        return token
 
 
 class VertexFigure:
@@ -488,15 +342,17 @@ class Polyhedron:
         return vertex_figures
 
 
-class ConstantRegion(Enum):
-    DEF = 0
-    WHERE = 1
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │ Polyhedron parsers                                                        │
+# └───────────────────────────────────────────────────────────────────────────┘
 
 
+# Something went wrong parsing STLs
 class StlError(Exception):
     pass
 
 
+# Parse STL files into Polyhedron objects
 class StlParser:
     def __init__(self, input: str) -> None:
         self.input = input
@@ -554,9 +410,167 @@ class StlParser:
         )
 
 
-class Parser:
+# Lex Visual Polyhedra files
+class VisualPolyhedraLexer:
+    def __init__(self) -> None:
+        self.tokenstream = []
+        self.pos = 0
+
+    @staticmethod
+    def munch_num(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
+        lexeme = ""
+        offset = 0
+        while input[pos + offset].isnumeric():
+            lexeme += input[pos + offset]
+            offset += 1
+
+        if input[pos + offset] != ".":
+            return (Token(TokenType.INT, lexeme, pos, line, column), offset)
+        offset += 1
+        lexeme += "."
+
+        while input[pos + offset].isnumeric():
+            lexeme += input[pos + offset]
+            offset += 1
+
+        return (Token(TokenType.FLOAT, lexeme, pos, line, column), offset)
+
+    @staticmethod
+    def munch_name(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
+        if not input[pos].isalpha():
+            raise Exception(f"Cannot parse name at position {pos}")
+
+        lexeme = input[pos]
+        offset = 1
+
+        while input[pos + offset].isalnum():
+            lexeme += input[pos + offset]
+            offset += 1
+
+        return (Token(TokenType.NAME, lexeme, pos, line, column), offset)
+
+    def lex(self, input: str):
+        i = 0
+        line = 1
+        column = 1
+        while i < len(input):
+            match input[i]:
+                case "(":
+                    self.tokenstream.append(
+                        Token(TokenType.LPAREN, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case ")":
+                    self.tokenstream.append(
+                        Token(TokenType.RPAREN, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "{":
+                    self.tokenstream.append(
+                        Token(TokenType.LBRACE, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "}":
+                    self.tokenstream.append(
+                        Token(TokenType.RBRACE, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "=":
+                    self.tokenstream.append(Token(TokenType.EQ, None, i, line, column))
+                    i += 1
+                    column += 1
+                case "-":
+                    self.tokenstream.append(
+                        Token(TokenType.MINUS, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case ",":
+                    self.tokenstream.append(
+                        Token(TokenType.COMMA, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "*":
+                    self.tokenstream.append(
+                        Token(TokenType.STAR, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "+":
+                    self.tokenstream.append(
+                        Token(TokenType.PLUS, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "/":
+                    self.tokenstream.append(
+                        Token(TokenType.SLASH, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "^":
+                    self.tokenstream.append(
+                        Token(TokenType.CARET, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case ":":
+                    self.tokenstream.append(
+                        Token(TokenType.COLON, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "\n":
+                    self.tokenstream.append(
+                        Token(TokenType.NEWLINE, None, i, line, column)
+                    )
+                    i += 1
+                    line += 1
+                    column = 1
+                case " " | "\t":
+                    i += 1
+                    column += 1
+                case "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9":
+                    (tok, offset) = self.munch_num(input, i, line, column)
+                    self.tokenstream.append(tok)
+                    i += offset
+                    column += offset
+                case _:
+                    (tok, offset) = self.munch_name(input, i, line, column)
+                    self.tokenstream.append(tok)
+                    i += offset
+                    column += offset
+        self.tokenstream.append(Token(TokenType.EOF, None, i, line, column))
+
+    def get(self) -> Token:
+        token = self.tokenstream[self.pos]
+        self.pos += 1
+        return token
+
+    def peek(self, i: int) -> Token:
+        assert i >= 0
+        assert self.pos + i <= len(self.tokenstream)
+        token = self.tokenstream[self.pos + i - 1]
+        return token
+
+
+# Constant definitions in visual polyhedra files can be followed by a 'where'
+# block. This flag tells the parser that we are currently reading 'where'
+# constants.
+class ConstantRegion(Enum):
+    DEF = 0
+    WHERE = 1
+
+
+# Parse visual polyhedra files to Polyhedron objects
+class VisualPolyhedraParser:
     def __init__(self, input) -> None:
-        self.lexer = Lexer()
+        self.lexer = VisualPolyhedraLexer()
         self.lexer.lex(input)
 
         self.vertices = {}
@@ -826,7 +840,7 @@ def get_parser(filepath: str):
             return StlParser(f.read())
     else:
         with open(filepath) as f:
-            return Parser(f.read())
+            return VisualPolyhedraParser(f.read())
 
 
 def main():
