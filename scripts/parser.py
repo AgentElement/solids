@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 import argparse
 import os
@@ -32,7 +33,7 @@ class TokenType(Enum):
 
 class Token:
     def __init__(
-        self, ttype: TokenType, lexeme: str | None, pos: int, line: int, column: int
+        self, ttype: TokenType, lexeme: Optional[str], pos: int, line: int, column: int
     ) -> None:
         self.ttype = ttype
         self.lexeme = lexeme
@@ -233,6 +234,83 @@ class Lexer:
         return token
 
 
+class VertexFigure:
+    def __init__(self, vecs: np.ndarray, edge_names: list[int], tag) -> None:
+        self.vecs = vecs
+        self.edge_names = edge_names
+
+        normal = self.normal()
+        if normal:
+            std, rotation, euler = self.reorient_to(normal)
+            self.std = std
+            self.rotation = rotation
+            self.euler = euler
+        self.tag = tag
+
+    def normalizable(self):
+        return bool(self.normal)
+
+    def normal(self) -> Optional[np.ndarray]:
+        pass
+
+    def matrix_to_rotation(self, m):
+        m_arr = np.array(m)
+        sy = np.sqrt(m_arr[0, 0] ** 2 + m_arr[1, 0] ** 2)
+        singular = sy < 1e-6
+        if not singular:
+            return [
+                float(np.atan2(m_arr[2, 1], m_arr[2, 2])),
+                float(np.atan2(-m_arr[2, 0], sy)),
+                float(np.atan2(m_arr[1, 0], m_arr[0, 0])),
+            ]
+        elif m_arr[2, 0] < 0:
+            return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), 90, 0]
+        else:
+            return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
+
+    def reorient_to(self, target=np.array([0, 0, 1])):
+        mean = np.sum(self.vecs, axis=0)
+        nm = np.linalg.norm(mean)
+        if nm < 1e-9:
+            return [self.vecs.tolist(), [0, 0, 0]]
+        u_mean = mean / nm
+        axis = np.cross(u_mean, target)
+        len_axis = np.linalg.norm(axis)
+        dot_val = np.dot(u_mean, target)
+        if len_axis < 1e-6:
+            if dot_val > 0:
+                return [self.vecs.tolist(), [0, 0, 0]]
+            else:
+                flipped = np.array([np.array([v[0], -v[1], -v[2]]) for v in self.vecs])
+                return [flipped.tolist(), [180, 0, 0]]
+        u = axis / len_axis
+        c = dot_val
+        s = len_axis
+        C = 1 - c
+        R = np.array(
+            [
+                [
+                    c + u[0] * u[0] * C,
+                    u[0] * u[1] * C - u[2] * s,
+                    u[0] * u[2] * C + u[1] * s,
+                ],
+                [
+                    u[1] * u[0] * C + u[2] * s,
+                    c + u[1] * u[1] * C,
+                    u[1] * u[2] * C - u[0] * s,
+                ],
+                [
+                    u[2] * u[0] * C - u[1] * s,
+                    u[2] * u[1] * C + u[0] * s,
+                    c + u[2] * u[2] * C,
+                ],
+            ]
+        )
+        euler = self.matrix_to_rotation(R.T)
+        rotated = np.array([R @ v for v in self.vecs])
+        return [rotated, euler]
+
+
 class Polyhedron:
     def __init__(
         self, name, vertices, faces, constant_exacts, constant_floats, constant_sequence
@@ -248,6 +326,7 @@ class Polyhedron:
 
         self.vertices = self.evaluate_vertices()
         self.edges = self.make_edgelist()
+        self.vertex_figures = self.annotate_vertex_figures()
 
     def evaluate_vertices(self):
         vertices = {}
@@ -272,13 +351,25 @@ class Polyhedron:
             vertices[vertex] = evaluated
         return vertices
 
-    def make_edgelist(self) -> set[tuple[int, int]]:
+    def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
                 v1, v2 = int(v1), int(v2)
                 edges.add((v1, v2) if v1 < v2 else (v2, v1))
-        return edges
+
+        edge_lengths = []
+        for v1, v2 in edges:
+            v1_arr = np.array(self.vertices[v1])
+            v2_arr = np.array(self.vertices[v2])
+            length = np.linalg.norm(v2_arr - v1_arr)
+            edge_lengths.append((length, v1, v2))
+
+        edge_lengths.sort(key=lambda x: x[0])
+        return {
+            (v1, v2): (name, length)
+            for name, [length, v1, v2] in enumerate(edge_lengths)
+        }
 
     def openscad_vertices(self) -> list[Token]:
         tokenstream = [
@@ -334,7 +425,7 @@ class Polyhedron:
             Token(TokenType.LSQUARE, None, -1, -1, -1),
             Token(TokenType.NEWLINE, None, -1, -1, -1),
         ]
-        for start, end in sorted(self.edges):
+        for start, end in sorted(self.edges.keys()):
             tokenstream.append(Token(TokenType.LSQUARE, None, -1, -1, -1))
             tokenstream.append(Token(TokenType.NAME, str(start), -1, -1, -1))
             tokenstream.append(Token(TokenType.COMMA, None, -1, -1, -1))
@@ -353,7 +444,7 @@ class Polyhedron:
         tokenstream += self.openscad_edges()
         return "".join([x.literal() for x in tokenstream])
 
-    def _vf_signature(self, vecs):
+    def vertex_figure_signature(self, vecs) -> list[int]:
         precision = 100000
         n = len(vecs)
         dots = sorted(
@@ -373,120 +464,27 @@ class Polyhedron:
         )
         return dots + triples
 
-    def _vf_tag(self, list):
-        if not list:
-            return []
-        tags = []
-        tag = 0
-        for i, item in enumerate(list):
-            if i == 0 or item[0] != list[i - 1][0]:
-                tag = i
-            tags.append(tag)
-        return tags
-
-    def _vf_matrix_to_rotation(self, m):
-        m_arr = np.array(m)
-        sy = np.sqrt(m_arr[0, 0] ** 2 + m_arr[1, 0] ** 2)
-        singular = sy < 1e-6
-        if not singular:
-            return [
-                float(np.atan2(m_arr[2, 1], m_arr[2, 2])),
-                float(np.atan2(-m_arr[2, 0], sy)),
-                float(np.atan2(m_arr[1, 0], m_arr[0, 0])),
-            ]
-        else:
-            if m_arr[2, 0] < 0:
-                return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), 90, 0]
-            else:
-                return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
-
-    def mean_reorient(self, vecs, target=np.array([0, 0, 1])):
-        vecs_arr = np.array(vecs)
-        mean = np.sum(vecs_arr, axis=0)
-        nm = np.linalg.norm(mean)
-        if nm < 1e-9:
-            return [vecs_arr.tolist(), [0, 0, 0]]
-        u_mean = mean / nm
-        axis = np.cross(u_mean, target)
-        len_axis = np.linalg.norm(axis)
-        dot_val = np.dot(u_mean, target)
-        if len_axis < 1e-6:
-            if dot_val > 0:
-                return [vecs_arr.tolist(), [0, 0, 0]]
-            else:
-                flipped = np.array([np.array([v[0], -v[1], -v[2]]) for v in vecs_arr])
-                return [flipped.tolist(), [180, 0, 0]]
-        u = axis / len_axis
-        c = dot_val
-        s = len_axis
-        C = 1 - c
-        R = np.array(
-            [
-                [
-                    c + u[0] * u[0] * C,
-                    u[0] * u[1] * C - u[2] * s,
-                    u[0] * u[2] * C + u[1] * s,
-                ],
-                [
-                    u[1] * u[0] * C + u[2] * s,
-                    c + u[1] * u[1] * C,
-                    u[1] * u[2] * C - u[0] * s,
-                ],
-                [
-                    u[2] * u[0] * C - u[1] * s,
-                    u[2] * u[1] * C + u[0] * s,
-                    c + u[2] * u[2] * C,
-                ],
-            ]
-        )
-        euler = self._vf_matrix_to_rotation(R.T)
-        rotated = np.array([R @ v for v in vecs_arr])
-        return [rotated.tolist(), euler]
-
-    def annotated_vertex_figures(self):
+    def annotate_vertex_figures(self) -> list[VertexFigure]:
         vertex_keys = sorted(self.vertices.keys())
         vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
 
-        edges_list = [list(e) for e in self.edges]
-        print(edges_list)
-
-        raw_figs = []
+        tags = {}
+        tag = 0
+        vertex_figures = []
         for i in range(len(vertices_arr)):
-            neighbors = []
-            for e in edges_list:
-                if e[0] == i:
-                    neighbors.append(e[1])
-                elif e[1] == i:
-                    neighbors.append(e[0])
+            neighbors = [e[1] if e[0] == i else e[0] for e in self.edges.keys()]
             vecs = [(vertices_arr[n] - vertices_arr[i]) for n in neighbors]
             vecs = [
                 v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
             ]
-            raw_figs.append(vecs)
+            signature = self.vertex_figure_signature(vecs)
+            if signature not in tags:
+                tags[signature] = tag
+                tag += 1
 
-        signed = []
-        for i in range(len(vertices_arr)):
-            fig = raw_figs[i]
-            std = self.mean_reorient(fig)
-            tuple_entry = [self._vf_signature(fig), fig, std, vertices_arr[i].tolist()]
-            signed.append(tuple_entry)
+            vertex_figures.append(VertexFigure(np.array(vecs), neighbors, tags))
 
-        signed.sort(key=lambda x: x[0])
-
-        tagged = self._vf_tag(signed)
-
-        annotated_vertex_figures = []
-        for i in range(len(vertices_arr)):
-            entry = [
-                signed[i][1],
-                signed[i][2][0],
-                signed[i][2][1],
-                signed[i][3],
-                tagged[i],
-            ]
-            annotated_vertex_figures.append(entry)
-
-        return annotated_vertex_figures
+        return vertex_figures
 
 
 class ConstantRegion(Enum):
