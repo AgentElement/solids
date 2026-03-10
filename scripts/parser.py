@@ -98,12 +98,15 @@ class VertexFigure:
         self.vecs = vecs
         self.edge_names = edge_names
 
+        self.std = vecs
+        self.euler = [0, 0, 0]
+
         normal = self.normal()
-        if normal:
-            std, rotation, euler = self.reorient_to(normal)
-            self.std = std
-            self.rotation = rotation
+        if normal is not None:
+            rotated, euler = self.reorient_to(normal)
+            self.std = rotated
             self.euler = euler
+
         self.tag = tag
 
     def normalizable(self):
