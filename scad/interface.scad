@@ -1,0 +1,77 @@
+use <vertex_holders.scad>
+use <solids.scad>
+
+EDGE_DIAMETER = 3.0;
+DIAMETER_TOLERANCE_FIT = 0.30;
+WALL_THICKNESS = 1.2;
+RADIUS = 200;
+ROD_INSET = 8;
+TUBE_DEPTH = ROD_INSET+WALL_THICKNESS;
+GLOBAL_OFFSET = 7.72;
+MIN_PRINTER_OVERHANG_ANGLE = 30;
+
+
+VERTEX_TYPE = "tubular";    // tubular, conical
+OFFSET_TYPE = "best";       // best, global, local
+
+OBJECT = "vertex_holder";   // vertex_holder, solid
+BY_TAG = true;
+INDEX = 0;
+COLORS = ["red", "green", "blue"];
+
+vertices = [];
+edges = [];
+vertex_figures = [];
+eulers = [];
+tags = [];
+offsets = [];
+
+
+module vertex_holder(holder_offset, index) {
+    vertex_figure = vertex_figures[index];
+    color(COLORS[index % 3])
+    if (VERTEX_TYPE == "tubular") {
+        tubular_vertex_holder(vertex_figure, oset=holder_offset);
+    } else if (VERTEX_TYPE == "conical") {
+        conical_vertex_holder(vertex_figure, oset=holder_offset);
+    }
+}
+
+module solid(holder_offset) {
+    norm_dist = RADIUS / max_dist(vertices);
+    hedron_edges(vertices, edges, norm_dist, holder_offset);
+    for (i=[0:len(vertices)-1]) {
+        vertex = vertices[i];
+        vertex_figure = vertex_figures[i];
+        euler = eulers[i];
+        tag = tag[i];
+
+        translate(norm_dist * vertex)
+        rotate(euler)
+        color(COLORS[tag % 3])
+        if (type == "tubular") {
+            tubular_vertex_holder(vertex_figure, oset=holder_offset);
+        } else if (type == "conical") {
+            conical_vertex_holder(vertex_figure, oset=holder_offset);
+        }
+    }
+}
+
+module main() {
+    holder_offset =
+        OFFSET_TYPE == "best" ? best_offset(vertex_figures) :
+        OFFSET_TYPE == "global" ? GLOBAL_CATALAN_OFFSET :
+        OFFSET_TYPE == "local" ? 0 :
+        GLOBAL_OFFSET;
+
+    if (OBJECT == "vertex_holder") {
+        index = BY_TAG ?
+            [for (i = [0:len(tags)-1]) if (tags == INDEX) i][0] :
+            INDEX;
+        vertex_holder(holder_offset, index, $fn=60);
+    } else {
+        solid(holder_offset);
+    }
+}
+
+main();
