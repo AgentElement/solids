@@ -79,11 +79,11 @@ function offset_from_vecs(vecs) =
     )
     axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
 
-function best_offset(figs) =
+function best_offset(vecs) =
+    len(vecs) == 0 ? 0 :
     let (
-        offsets = [for(i=[0:len(figs)-1])
-            let ( std = figs[i][1] )
-            offset_from_vecs(std)
+        offsets = [for(i=[0:len(vecs)-1])
+            offset_from_vecs(vecs[i])
         ],
         best = max(offsets)
     )
@@ -174,8 +174,9 @@ module conical_vertex_holder(vecs, oset=0) {
 
 module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
+    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
     holder_offset =
-        oset == "best" ? best_offset(figs) :
+        oset == "best" ? best_offset(vecs) :
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
         GLOBAL_CATALAN_OFFSET;
     colors = ["red", "green", "blue"];
@@ -201,8 +202,9 @@ module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
 
 module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
+    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
     holder_offset =
-        oset == "best" ? best_offset(figs) :
+        oset == "best" ? best_offset(vecs) :
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
         oset == "local" ? 0 :
         GLOBAL_CATALAN_OFFSET;
