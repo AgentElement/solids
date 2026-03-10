@@ -217,13 +217,17 @@ class Polyhedron:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
-                v1, v2 = int(v1), int(v2)
-                edges.add((v1, v2) if v1 < v2 else (v2, v1))
+                v1 = int(v1)
+                v2 = int(v2)
+                v1_str = f"V{v1}"
+                v2_str = f"V{v2}"
+                if v1_str in self.vertices and v2_str in self.vertices:
+                    edges.add((v1, v2) if v1 < v2 else (v2, v1))
 
         edge_lengths = []
         for v1, v2 in edges:
-            v1_arr = np.array(self.vertices[v1])
-            v2_arr = np.array(self.vertices[v2])
+            v1_arr = np.array(self.vertices[f"V{v1}"])
+            v2_arr = np.array(self.vertices[f"V{v2}"])
             length = np.linalg.norm(v2_arr - v1_arr)
             edge_lengths.append((length, v1, v2))
 
