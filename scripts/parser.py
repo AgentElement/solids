@@ -310,7 +310,7 @@ class Polyhedron:
         tokenstream += self.openscad_edges()
         return "".join([x.literal() for x in tokenstream])
 
-    def vertex_figure_signature(self, vecs) -> list[int]:
+    def vertex_figure_signature(self, vecs) -> tuple[int, ...]:
         precision = 100000
         n = len(vecs)
         dots = sorted(
@@ -328,7 +328,7 @@ class Polyhedron:
                 for k in range(n)
             ]
         )
-        return dots + triples
+        return tuple(dots + triples)
 
     def annotate_vertex_figures(self) -> list[VertexFigure]:
         vertex_keys = sorted(self.vertices.keys())
@@ -338,7 +338,11 @@ class Polyhedron:
         tag = 0
         vertex_figures = []
         for i in range(len(vertices_arr)):
-            neighbors = [e[1] if e[0] == i else e[0] for e in self.edges.keys()]
+            neighbors = [
+                e[1] if e[0] == i else (e[0] if e[1] == i else None)
+                for e in self.edges.keys()
+            ]
+            neighbors = [n for n in neighbors if n is not None]
             vecs = [(vertices_arr[n] - vertices_arr[i]) for n in neighbors]
             vecs = [
                 v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
