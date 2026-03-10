@@ -4,6 +4,7 @@ from typing import Optional
 import argparse
 import os
 import glob
+import subprocess
 
 import numpy as np
 
@@ -186,9 +187,15 @@ class Polyhedron:
         self.constant_floats = constant_floats
         self.constant_sequence = constant_sequence
 
-        self.vertices = self.evaluate_vertices()
-        self.edges = self.make_edgelist()
+        self.vertices: dict[str, list[float]] = self.evaluate_vertices()
+        self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+
+    # Return vertex coordinates in sorted order
+    def vertex_coordinates(self):
+        vertex_keys = sorted(self.vertices.keys())
+        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
+        return vertices_arr
 
     def evaluate_vertices(self):
         vertices = {}
@@ -331,8 +338,7 @@ class Polyhedron:
         return tuple(dots + triples)
 
     def annotate_vertex_figures(self) -> list[VertexFigure]:
-        vertex_keys = sorted(self.vertices.keys())
-        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
+        vertices_arr = self.vertex_coordinates()
 
         tags = {}
         tag = 0
@@ -362,6 +368,7 @@ class Polyhedron:
 class GlobalOptions:
     def __init__(
         self,
+        polyhedron: Polyhedron,
         edge_diameter: float = 3.0,
         diameter_tolerance_fit: float = 0.30,
         wall_thickness: float = 1.2,
@@ -394,6 +401,31 @@ class GlobalOptions:
         self.index = index
         self.colors = colors if colors is not None else ["red", "green", "blue"]
 
+        vertices, edges, vertex_figures, eulers, tags, offsets = (
+            self.polyhedron_options_array(polyhedron)
+        )
+        self.vertices = vertices
+        self.edges = edges
+        self.vertex_figures = vertex_figures
+        self.eulers = eulers
+        self.tags = tags
+        self.offsets = offsets
+
+    def polyhedron_options_array(self, polyhedron: Polyhedron):
+        vertices = polyhedron.vertex_coordinates()
+        edges = polyhedron.edges.keys()
+        vertex_figures = []
+        eulers = []
+        tags = []
+        offsets = []
+
+        for vertex_figure in polyhedron.vertex_figures:
+            vertex_figures.append(vertex_figure.std)
+            eulers.append(vertex_figure.euler)
+            tags.append(vertex_figure.tag)
+
+        return vertices, edges, vertex_figures, eulers, tags, offsets
+
     def to_openscad_args(self) -> list[str]:
         args = []
         args.append(f"-DEDGE_DIAMETER={self.edge_diameter}")
@@ -411,6 +443,34 @@ class GlobalOptions:
         args.append(f"-DINDEX={self.index}")
         colors_str = "[" + ",".join(f'"{c}"' for c in self.colors) + "]"
         args.append(f"-DCOLORS={colors_str}")
+        vertices_str = (
+            "["
+            + ",".join(
+                f"[{','.join(str(v) for v in vertex)}]" for vertex in self.vertices
+            )
+            + "]"
+        )
+        args.append(f"-Dvertices={vertices_str}")
+        edges_str = (
+            "[" + ",".join(f"[{start},{end}]" for start, end in self.edges) + "]"
+        )
+        args.append(f"-Dedges={edges_str}")
+        vertex_figures_str = (
+            "["
+            + ",".join(
+                f"[{','.join(str(v) for v in vf)}]" for vf in self.vertex_figures
+            )
+            + "]"
+        )
+        args.append(f"-Dvertex_figures={vertex_figures_str}")
+        eulers_str = (
+            "[" + ",".join(f"[{e[0]},{e[1]},{e[2]}]" for e in self.eulers) + "]"
+        )
+        args.append(f"-Deulers={eulers_str}")
+        tags_str = "[" + ",".join(str(t) for t in self.tags) + "]"
+        args.append(f"-Dtags={tags_str}")
+        offsets_str = "[" + ",".join(str(o) for o in self.offsets) + "]"
+        args.append(f"-Doffsets={offsets_str}")
         return args
 
 
@@ -915,6 +975,12 @@ def get_parser(filepath: str):
             return VisualPolyhedraParser(f.read())
 
 
+def call_openscad(polyhedron: Polyhedron, options: GlobalOptions):
+    command = ["openscad"] + options.to_openscad_args() + ["scad/interface.scad"]
+    print(command)
+    subprocess.run(command)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", help="Directory containing polyhedron files")
@@ -928,6 +994,8 @@ def main():
         else:
             polyhedron = p.polyhedron()
         print(polyhedron.openscad())
+        options = GlobalOptions(polyhedron)
+        call_openscad(polyhedron, options)
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
             p = get_parser(filepath)
