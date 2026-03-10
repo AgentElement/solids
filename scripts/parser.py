@@ -88,6 +88,11 @@ class Token:
         return f"{self.pos} {self.ttype} {self.lexeme}"
 
 
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │ Geometry                                                                  │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+
 class VertexFigure:
     def __init__(self, vecs: np.ndarray, edge_names: list[int], tag) -> None:
         self.vecs = vecs
@@ -340,6 +345,61 @@ class Polyhedron:
             )
 
         return vertex_figures
+
+
+class GlobalOptions:
+    def __init__(
+        self,
+        edge_diameter: float = 3.0,
+        diameter_tolerance_fit: float = 0.30,
+        wall_thickness: float = 1.2,
+        radius: float = 200,
+        rod_inset: float = 8,
+        tube_depth: Optional[float] = None,
+        global_offset: float = 7.72,
+        min_printer_overhang_angle: float = 30,
+        vertex_type: str = "tubular",
+        offset_type: str = "best",
+        object_type: str = "vertex_holder",
+        by_tag: bool = True,
+        index: int = 0,
+        colors: Optional[list[str]] = None,
+    ) -> None:
+        self.edge_diameter = edge_diameter
+        self.diameter_tolerance_fit = diameter_tolerance_fit
+        self.wall_thickness = wall_thickness
+        self.radius = radius
+        self.rod_inset = rod_inset
+        self.tube_depth = (
+            tube_depth if tube_depth is not None else rod_inset + wall_thickness
+        )
+        self.global_offset = global_offset
+        self.min_printer_overhang_angle = min_printer_overhang_angle
+        self.vertex_type = vertex_type
+        self.offset_type = offset_type
+        self.object_type = object_type
+        self.by_tag = by_tag
+        self.index = index
+        self.colors = colors if colors is not None else ["red", "green", "blue"]
+
+    def to_openscad_args(self) -> list[str]:
+        args = []
+        args.append(f"-DEDGE_DIAMETER={self.edge_diameter}")
+        args.append(f"-DDIAMETER_TOLERANCE_FIT={self.diameter_tolerance_fit}")
+        args.append(f"-DWALL_THICKNESS={self.wall_thickness}")
+        args.append(f"-DRADIUS={self.radius}")
+        args.append(f"-DROD_INSET={self.rod_inset}")
+        args.append(f"-DTUBE_DEPTH={self.tube_depth}")
+        args.append(f"-DGLOBAL_OFFSET={self.global_offset}")
+        args.append(f"-DMIN_PRINTER_OVERHANG_ANGLE={self.min_printer_overhang_angle}")
+        args.append(f'-DVERTEX_TYPE="{self.vertex_type}"')
+        args.append(f'-DOFFSET_TYPE="{self.offset_type}"')
+        args.append(f'-DOBJECT="{self.object_type}"')
+        args.append(f"-DBY_TAG={'true' if self.by_tag else 'false'}")
+        args.append(f"-DINDEX={self.index}")
+        colors_str = "[" + ",".join(f'"{c}"' for c in self.colors) + "]"
+        args.append(f"-DCOLORS={colors_str}")
+        return args
 
 
 # ┌───────────────────────────────────────────────────────────────────────────┐
