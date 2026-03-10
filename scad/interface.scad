@@ -44,14 +44,14 @@ module solid(holder_offset) {
         vertex = vertices[i];
         vertex_figure = vertex_figures[i];
         euler = eulers[i];
-        tag = tag[i];
+        tag = tags[i];
 
         translate(norm_dist * vertex)
         rotate(euler)
         color(COLORS[tag % 3])
-        if (type == "tubular") {
+        if (VERTEX_TYPE == "tubular") {
             tubular_vertex_holder(vertex_figure, oset=holder_offset);
-        } else if (type == "conical") {
+        } else if (VERTEX_TYPE == "conical") {
             conical_vertex_holder(vertex_figure, oset=holder_offset);
         }
     }
@@ -65,9 +65,9 @@ module main() {
         GLOBAL_OFFSET;
 
     if (OBJECT == "vertex_holder") {
-        index = BY_TAG ?
-            [for (i = [0:len(tags)-1]) if (tags == INDEX) i][0] :
-            INDEX;
+    index = BY_TAG ?
+        [for (i = [0:len(tags)-1]) if (tags[i] == INDEX) i][0] :
+        INDEX;
         vertex_holder(holder_offset, index, $fn=60);
     } else {
         solid(holder_offset);
