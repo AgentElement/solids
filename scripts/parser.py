@@ -113,7 +113,8 @@ class VertexFigure:
         return bool(self.normal)
 
     def normal(self) -> Optional[np.ndarray]:
-        return np.sum(self.vecs, axis=0)
+        n = np.sum(self.vecs, axis=0)
+        return n if np.linalg.norm(n) > 1e-10 else None
 
     def matrix_to_rotation(self, m):
         m_arr = np.array(m)
