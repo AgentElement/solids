@@ -458,7 +458,7 @@ class GlobalOptions:
         vertex_figures_str = (
             "["
             + ",".join(
-                f"[{','.join(str(v) for v in vf)}]" for vf in self.vertex_figures
+                f"[{','.join(str(v) for v in vf.tolist())}]" for vf in self.vertex_figures
             )
             + "]"
         )
