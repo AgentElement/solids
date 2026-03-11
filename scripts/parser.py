@@ -973,6 +973,11 @@ class VisualPolyhedraParser:
             print(tok.ttype, tok.lexeme)
 
 
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │ main() and helpers                                                        │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+
 def get_parser(filepath: str):
     if filepath.lower().endswith(".stl"):
         with open(filepath) as f:
@@ -992,6 +997,49 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", help="Directory containing polyhedron files")
     parser.add_argument("--file", "-f", help="Specific file to process")
+
+    parser.add_argument("--edge-diameter", type=float, help="Diameter of edge struts")
+    parser.add_argument(
+        "--diameter-tolerance-fit",
+        type=float,
+        help="Additional tolerance added to interior diameter of generated vertex holders",
+    )
+    parser.add_argument(
+        "--wall-thickness", type=float, help="Vertex holder wall thickness"
+    )
+    parser.add_argument("--radius", type=float, help="Radius of your solid")
+    parser.add_argument(
+        "--rod-inset", type=float, help="Vertex holders will inset edges by this amount"
+    )
+    parser.add_argument(
+        "--global-offset", type=float, help="Override offset calculations and"
+    )
+    parser.add_argument(
+        "--min-printer-overhang-angle",
+        type=float,
+        help="Minimum printer overhang angle",
+    )
+    parser.add_argument(
+        "--vertex-type",
+        choices=["tubular", "conical"],
+        help="Tubular vertices require less material. Conical vertices are bulky but strong.",
+    )
+    parser.add_argument(
+        "--offset-type",
+        choices=["best", "global", "local"],
+        help="Offset type. Best computes an identical offset for your solid. Local computes a unique offset for each vertex. Global",
+    )
+    parser.add_argument(
+        "--object-type", choices=["vertex_holder", "solid"], help="Object type"
+    )
+    parser.add_argument(
+        "--group-identical-vertices",
+        action="store_true",
+        help="Group vertices that are equivalent under rotations",
+    )
+    parser.add_argument("--index")
+    parser.add_argument("--colors", nargs="+", help="Color scheme for previews")
+
     args = parser.parse_args()
 
     if args.file:
@@ -1000,7 +1048,23 @@ def main():
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
-        options = GlobalOptions(polyhedron)
+        options_dict = {
+            "edge_diameter": args.edge_diameter,
+            "diameter_tolerance_fit": args.diameter_tolerance_fit,
+            "wall_thickness": args.wall_thickness,
+            "radius": args.radius,
+            "rod_inset": args.rod_inset,
+            "global_offset": args.global_offset,
+            "min_printer_overhang_angle": args.min_printer_overhang_angle,
+            "vertex_type": args.vertex_type,
+            "offset_type": args.offset_type,
+            "object_type": args.object_type,
+            "by_tag": args.group_identical_vertices,
+            "index": args.index,
+            "colors": args.colors,
+        }
+        options_dict = {k: v for k, v in options_dict.items() if v is not None}
+        options = GlobalOptions(polyhedron, **options_dict)
         call_openscad(polyhedron, options)
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
