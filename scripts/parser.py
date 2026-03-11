@@ -373,7 +373,8 @@ class GlobalOptions:
         self,
         polyhedron: Polyhedron,
         edge_diameter: float = 3.0,
-        diameter_tolerance_fit: float = 0.30,
+        diameter_tolerance_fit: float = 0.35,
+        diameter_taper_fit: float = 0.10,
         wall_thickness: float = 1.2,
         radius: float = 200,
         rod_inset: float = 8,
@@ -389,6 +390,7 @@ class GlobalOptions:
     ) -> None:
         self.edge_diameter = edge_diameter
         self.diameter_tolerance_fit = diameter_tolerance_fit
+        self.diameter_taper_fit = diameter_taper_fit
         self.wall_thickness = wall_thickness
         self.radius = radius
         self.rod_inset = rod_inset
@@ -433,6 +435,7 @@ class GlobalOptions:
         args = []
         args.append(f"-DEDGE_DIAMETER={self.edge_diameter}")
         args.append(f"-DDIAMETER_TOLERANCE_FIT={self.diameter_tolerance_fit}")
+        args.append(f"-DDIAMETER_TAPER_FIT={self.diameter_taper_fit}")
         args.append(f"-DWALL_THICKNESS={self.wall_thickness}")
         args.append(f"-DRADIUS={self.radius}")
         args.append(f"-DROD_INSET={self.rod_inset}")
@@ -1005,6 +1008,11 @@ def main():
         help="Additional tolerance added to interior diameter of generated vertex holders",
     )
     parser.add_argument(
+        "--diameter-taper-fit",
+        type=float,
+        help="Interior diameter of generated vertex holders decrease by this amount towards their bases",
+    )
+    parser.add_argument(
         "--wall-thickness", type=float, help="Vertex holder wall thickness"
     )
     parser.add_argument("--radius", type=float, help="Radius of your solid")
@@ -1051,6 +1059,7 @@ def main():
         options_dict = {
             "edge_diameter": args.edge_diameter,
             "diameter_tolerance_fit": args.diameter_tolerance_fit,
+            "diameter_taper_fit": args.diameter_taper_fit,
             "wall_thickness": args.wall_thickness,
             "radius": args.radius,
             "rod_inset": args.rod_inset,
