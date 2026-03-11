@@ -132,7 +132,10 @@ module tubular_vertex_holder(vecs, oset=0) {
             union() {
                 difference() {
                     cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH);
-                    cylinder(d=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT, h=TUBE_DEPTH);
+                    cylinder(
+                        d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
+                        d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
+                        h=TUBE_DEPTH);
                 }
                 translate([0, 0, -oset])
                 cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
@@ -164,22 +167,24 @@ module conical_vertex_holder(vecs, oset=0) {
             translate(oset * v)
             rotate(rotation)
             translate([0, 0, WALL_THICKNESS])
-            linear_extrude(TUBE_DEPTH)
-            circle(d=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT);
+            cylinder(
+                d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
+                d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
+                h=TUBE_DEPTH);
         }
         translate([0, 0, -50+cutoff])
         cube([100, 100, 100], center=true);
     }
 }
 
-module all_vertex_holders(vertices, edges, type="tubular", oset="best") {
+module all_vertex_holders(vertices, edges, tag, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
     vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
     holder_offset =
         oset == "best" ? best_offset(vecs) :
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
         GLOBAL_CATALAN_OFFSET;
-    colors = ["red", "green", "blue"];
+    colors = ["red", "blue", "green"];
 
     for(i=[0:len(figs)-1]) {
         fig = figs[i][0];
@@ -208,7 +213,7 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
         oset == "local" ? 0 :
         GLOBAL_CATALAN_OFFSET;
-    colors = ["red", "green", "blue"];
+    colors = ["red", "blue", "green"];
 
     // Filter to find the indices of all figures where tag == 1
     matches = [for (i = [0:len(figs)-1]) if (figs[i][4] == tag) i];
@@ -233,4 +238,4 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     }
 }
 
-one_vertex_holder(disdyakis_triacontahedron_vertices, disdyakis_triacontahedron_edges, 2, type="tubular", oset="best", $fn=60);
+one_vertex_holder(pentagonal_hexecontahedron_laevo_vertices, pentagonal_hexecontahedron_laevo_edges, 0, type="tubular", oset="best", $fn=60);
