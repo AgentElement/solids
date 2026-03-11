@@ -95,7 +95,10 @@ class Token:
 
 
 class VertexFigure:
-    def __init__(self, vecs: np.ndarray, edge_names: list[int], tag) -> None:
+    def __init__(
+        self, vertex: np.ndarray, vecs: np.ndarray, edge_names: list[int], tag
+    ) -> None:
+        self.vertex = vertex
         self.vecs = vecs
         self.edge_names = edge_names
 
@@ -345,13 +348,13 @@ class Polyhedron:
         tags = {}
         tag = 0
         vertex_figures = []
-        for i in range(len(vertices_arr)):
+        for i, vertex in enumerate(vertices_arr):
             neighbors = [
                 e[1] if e[0] == i else (e[0] if e[1] == i else None)
                 for e in self.edges.keys()
             ]
             neighbors = [n for n in neighbors if n is not None]
-            vecs = [(vertices_arr[n] - vertices_arr[i]) for n in neighbors]
+            vecs = [(vertices_arr[n] - vertex) for n in neighbors]
             vecs = [
                 v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
             ]
@@ -361,7 +364,7 @@ class Polyhedron:
                 tag += 1
 
             vertex_figures.append(
-                VertexFigure(np.array(vecs), neighbors, tags[signature])
+                VertexFigure(vertex, np.array(vecs), neighbors, tags[signature])
             )
 
         return vertex_figures
@@ -460,7 +463,8 @@ class GlobalOptions:
         vertex_figures_str = (
             "["
             + ",".join(
-                f"[{','.join(str(v) for v in vf.tolist())}]" for vf in self.vertex_figures
+                f"[{','.join(str(v) for v in vf.tolist())}]"
+                for vf in self.vertex_figures
             )
             + "]"
         )
@@ -995,7 +999,6 @@ def main():
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
-        print(polyhedron.openscad())
         options = GlobalOptions(polyhedron)
         call_openscad(polyhedron, options)
     else:
