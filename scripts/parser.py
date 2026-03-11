@@ -120,20 +120,22 @@ class VertexFigure:
         n = np.sum(self.vecs, axis=0)
         return n if np.linalg.norm(n) > 1e-10 else None
 
-    def matrix_to_rotation(self, m):
-        m_arr = np.array(m)
-        sy = np.sqrt(m_arr[0, 0] ** 2 + m_arr[1, 0] ** 2)
+    def matrix_to_rotation(self, R: np.ndarray):
+        sy = np.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
         singular = sy < 1e-6
         if not singular:
             return [
-                float(np.atan2(m_arr[2, 1], m_arr[2, 2])),
-                float(np.atan2(-m_arr[2, 0], sy)),
-                float(np.atan2(m_arr[1, 0], m_arr[0, 0])),
+                float(np.atan2(R[2, 1], R[2, 2])),
+                float(np.atan2(-R[2, 0], sy)),
+                float(np.atan2(R[1, 0], R[0, 0])),
             ]
-        elif m_arr[2, 0] < 0:
-            return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), 90, 0]
+        # Handle gimbal lock cases
+        elif R[2, 0] < 0:
+            # y = 90 degrees
+            return [float(np.atan2(-R[1, 2], R[1, 1])), 90, 0]
         else:
-            return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
+            # y = -90 degrees
+            return [float(np.atan2(-R[1, 2], R[1, 1])), -90, 0]
 
     def reorient_to(
         self, normal, target=np.array([0, 0, 1])
