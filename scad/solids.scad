@@ -71,9 +71,10 @@ function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 
 module hedron(vertices, edges, name="", type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
+    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
 
     holder_offset =
-        oset == "best" ? best_offset(figs) :
+        oset == "best" ? best_offset(vecs) :
         oset == "global" ? GLOBAL_CATALAN_OFFSET :
         GLOBAL_CATALAN_OFFSET;
 
@@ -81,7 +82,7 @@ module hedron(vertices, edges, name="", type="tubular", oset="best") {
     print_edge_lengths(vertices, edges, figs, holder_offset, name);
     hedron_edges(vertices, edges, norm_dist, holder_offset+WALL_THICKNESS);
 
-    colors = ["red", "green", "blue"];
+    colors = ["red", "blue", "green"];
 
     // Visualize the result
     for(i=[0:len(figs)-1]) {
