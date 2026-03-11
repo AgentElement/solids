@@ -47,7 +47,8 @@ module solid(holder_offset) {
         tag = tags[i];
 
         translate(norm_dist * vertex)
-        rotate(euler)
+        // The python script gives rotations in radians.
+        rotate(euler * 180 / PI)
         color(COLORS[tag % 3])
         if (VERTEX_TYPE == "tubular") {
             tubular_vertex_holder(vertex_figure, oset=holder_offset);
