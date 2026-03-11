@@ -192,7 +192,7 @@ class Polyhedron:
         self.constant_floats = constant_floats
         self.constant_sequence = constant_sequence
 
-        self.vertices: dict[str, list[float]] = self.evaluate_vertices()
+        self.vertices: dict[int, list[float]] = self.evaluate_vertices()
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
 
@@ -229,17 +229,13 @@ class Polyhedron:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
-                v1 = int(v1)
-                v2 = int(v2)
-                v1_str = f"V{v1}"
-                v2_str = f"V{v2}"
-                if v1_str in self.vertices and v2_str in self.vertices:
+                if v1 in self.vertices and v2 in self.vertices:
                     edges.add((v1, v2) if v1 < v2 else (v2, v1))
 
         edge_lengths = []
         for v1, v2 in edges:
-            v1_arr = np.array(self.vertices[f"V{v1}"])
-            v2_arr = np.array(self.vertices[f"V{v2}"])
+            v1_arr = np.array(self.vertices[v1])
+            v2_arr = np.array(self.vertices[v2])
             length = np.linalg.norm(v2_arr - v1_arr)
             edge_lengths.append((length, v1, v2))
 
@@ -384,7 +380,7 @@ class GlobalOptions:
         min_printer_overhang_angle: float = 30,
         vertex_type: str = "tubular",
         offset_type: str = "best",
-        object_type: str = "vertex_holder",
+        object_type: str = "solid",
         by_tag: bool = True,
         index: int = 0,
         colors: Optional[list[str]] = None,
@@ -957,10 +953,13 @@ class VisualPolyhedraParser:
             self.constant_where_sequence + self.constant_def_sequence
         )
 
+        vertices = {int(name[1:]): rest for name, rest in self.vertices.items()}
+        faces = [[int(v) for v in f] for f in self.faces]
+
         return Polyhedron(
             self.name,
-            self.vertices,
-            self.faces,
+            vertices,
+            faces,
             self.constant_exacts,
             self.constant_floats,
             self.constant_sequence,
