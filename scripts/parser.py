@@ -132,20 +132,22 @@ class VertexFigure:
         else:
             return [float(np.atan2(-m_arr[1, 2], m_arr[1, 1])), -90, 0]
 
-    def reorient_to(self, normal, target=np.array([0, 0, 1])):
+    def reorient_to(
+        self, normal, target=np.array([0, 0, 1])
+    ) -> tuple[np.ndarray, list[int]]:
         nn = np.linalg.norm(normal)
         if nn < 1e-9:
-            return [self.vecs.tolist(), [0, 0, 0]]
+            return (self.vecs, [0, 0, 0])
         u_mean = normal / nn
         axis = np.cross(u_mean, target)
         len_axis = np.linalg.norm(axis)
         dot_val = np.dot(u_mean, target)
         if len_axis < 1e-6:
             if dot_val > 0:
-                return [self.vecs.tolist(), [0, 0, 0]]
+                return (self.vecs, [0, 0, 0])
             else:
                 flipped = np.array([np.array([v[0], -v[1], -v[2]]) for v in self.vecs])
-                return [flipped.tolist(), [180, 0, 0]]
+                return (flipped, [180, 0, 0])
         u = axis / len_axis
         c = dot_val
         s = len_axis
@@ -171,7 +173,7 @@ class VertexFigure:
         )
         euler = self.matrix_to_rotation(R.T)
         rotated = np.array([R @ v for v in self.vecs])
-        return [rotated, euler]
+        return (rotated, euler)
 
 
 class Polyhedron:
