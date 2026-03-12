@@ -387,7 +387,6 @@ class GlobalOptions:
         wall_thickness: float = 1.2,
         radius: float = 200,
         rod_inset: float = 8,
-        tube_depth: Optional[float] = None,
         global_offset: float = 7.72,
         min_printer_overhang_angle: float = 30,
         vertex_type: str = "tubular",
@@ -403,9 +402,6 @@ class GlobalOptions:
         self.wall_thickness = wall_thickness
         self.radius = radius
         self.rod_inset = rod_inset
-        self.tube_depth = (
-            tube_depth if tube_depth is not None else rod_inset + wall_thickness
-        )
         self.global_offset = global_offset
         self.min_printer_overhang_angle = min_printer_overhang_angle
         self.vertex_type = vertex_type
@@ -448,7 +444,6 @@ class GlobalOptions:
         args.append(f"-DWALL_THICKNESS={self.wall_thickness}")
         args.append(f"-DRADIUS={self.radius}")
         args.append(f"-DROD_INSET={self.rod_inset}")
-        args.append(f"-DTUBE_DEPTH={self.tube_depth}")
         args.append(f"-DGLOBAL_OFFSET={self.global_offset}")
         args.append(f"-DMIN_PRINTER_OVERHANG_ANGLE={self.min_printer_overhang_angle}")
         args.append(f'-DVERTEX_TYPE="{self.vertex_type}"')
