@@ -105,7 +105,7 @@ class VertexFigure:
         self.std = vecs
         self.euler = [0, 0, 0]
 
-        normal = self.normal()
+        normal = self.plane_normal()
         if normal is not None:
             rotated, euler = self.reorient_to(normal)
             self.std = rotated
@@ -113,14 +113,23 @@ class VertexFigure:
 
         self.tag = tag
 
-    def normalizable(self):
+    def normalizable(self) -> bool:
         return bool(self.normal)
 
     def normal(self) -> Optional[np.ndarray]:
         n = np.sum(self.vecs, axis=0)
         return n if np.linalg.norm(n) > 1e-10 else None
 
-    def matrix_to_rotation(self, R: np.ndarray):
+    def plane_normal(self) -> Optional[np.ndarray]:
+        if len(self.vecs) < 3:
+            return None
+        center = np.mean(self.vecs, axis=0)
+        centered = self.vecs - center
+        _, _, vh = np.linalg.svd(centered)
+        normal = vh[2]
+        return -normal / np.linalg.norm(normal)
+
+    def matrix_to_rotation(self, R: np.ndarray) -> list[float]:
         sy = np.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
         singular = sy < 1e-6
         if not singular:
@@ -139,7 +148,7 @@ class VertexFigure:
 
     def reorient_to(
         self, normal, target=np.array([0, 0, 1])
-    ) -> tuple[np.ndarray, list[int]]:
+    ) -> tuple[np.ndarray, list[float]]:
         nn = np.linalg.norm(normal)
         if nn < 1e-9:
             return (self.vecs, [0, 0, 0])
