@@ -105,9 +105,12 @@ class VertexFigure:
         self.std = vecs
         self.euler = [0, 0, 0]
 
-        normal = self.plane_normal()
+        plane_normal = self.plane_normal()
+        normal = self.normal()
+        direction = 1 if np.dot(plane_normal, normal) > 0 else 0
+
         if normal is not None:
-            rotated, euler = self.reorient_to(normal)
+            rotated, euler = self.reorient_to(direction * plane_normal)
             self.std = rotated
             self.euler = euler
 
@@ -118,7 +121,8 @@ class VertexFigure:
 
     def normal(self) -> Optional[np.ndarray]:
         n = np.sum(self.vecs, axis=0)
-        return n if np.linalg.norm(n) > 1e-10 else None
+        norm = np.linalg.norm(n)
+        return n / norm if norm > 1e-10 else None
 
     def plane_normal(self) -> Optional[np.ndarray]:
         if len(self.vecs) < 3:
