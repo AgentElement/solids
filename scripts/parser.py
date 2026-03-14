@@ -146,6 +146,9 @@ class VertexFigure:
             # y = -90 degrees
             return [float(np.atan2(-R[1, 2], R[1, 1])), -90, 0]
 
+
+    # Orient normal to target, then apply this rotation to all vectors in the
+    # figure
     def reorient_to(
         self, normal, target=np.array([0, 0, 1])
     ) -> tuple[np.ndarray, list[float]]:
@@ -1024,7 +1027,7 @@ def main():
         "--rod-inset", type=float, help="Vertex holders will inset edges by this amount"
     )
     parser.add_argument(
-        "--global-offset", type=float, help="Override offset calculations and"
+        "--global-offset", type=float, help="If --offset-type is global, then set all offsets to this value"
     )
     parser.add_argument(
         "--min-printer-overhang-angle",
@@ -1039,7 +1042,7 @@ def main():
     parser.add_argument(
         "--offset-type",
         choices=["best", "global", "local"],
-        help="Offset type. Best computes an identical offset for your solid. Local computes a unique offset for each vertex. Global",
+        help="Offset type. Best computes an identical offset for each vertex in your solid. Local computes a unique offset for each vertex. Global sets all offsets to the value of -global---offset",
     )
     parser.add_argument(
         "--object-type", choices=["vertex_holder", "solid"], help="Object type"
