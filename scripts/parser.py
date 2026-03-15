@@ -108,7 +108,7 @@ class VertexFigure:
         plane_normal = self.plane_normal()
         normal = self.normal()
         if normal is not None and plane_normal is not None:
-            direction = 1 if np.dot(plane_normal, normal) > 0 else 0
+            direction = 1 if np.dot(plane_normal, normal) > 0 else -1
             rotated, euler = self.reorient_to(direction * plane_normal)
             self.std = rotated
             self.euler = euler
