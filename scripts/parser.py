@@ -6,9 +6,12 @@ import os
 import glob
 import subprocess
 
-import struct
-
 import numpy as np
+
+try:
+    import stl_reader
+except ImportError:
+    stl_reader = None
 
 
 class TokenType(Enum):
@@ -249,8 +252,10 @@ class Polyhedron:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
-                if v1 in self.vertices and v2 in self.vertices:
-                    edges.add((v1, v2) if v1 < v2 else (v2, v1))
+                v1_int = int(v1)
+                v2_int = int(v2)
+                if v1_int in self.vertices and v2_int in self.vertices:
+                    edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
 
         edge_lengths = []
         for v1, v2 in edges:
@@ -499,128 +504,32 @@ class GlobalOptions:
 # └───────────────────────────────────────────────────────────────────────────┘
 
 
-# Something went wrong parsing STLs
-class StlError(Exception):
-    pass
-
-
-# Parse binary STL files into Polyhedron objects
-class BinStlParser:
-    def __init__(self, input: bytes) -> None:
-        self.input = input
-
-    def parse(self) -> Polyhedron:
-        if len(self.input) < 84:
-            raise StlError("STL file too small")
-
-        header = self.input[0:80].decode("utf-8", errors="ignore")
-        num_triangles = int.from_bytes(self.input[80:84], byteorder="little")
-
-        vertices = {}
-        vertex_counter = 0
-
-        offset = 84
-        for _ in range(num_triangles):
-            if offset + 50 > len(self.input):
-                raise StlError("Malformed binary stl file")
-
-            float_size = 4
-            normal = self.input[offset : offset + float_size * 3]
-            offset += float_size * 3
-
-            for _ in range(3):
-                x = struct.unpack("<f", self.input[offset : offset + float_size])[0]
-                y = struct.unpack(
-                    "<f", self.input[offset + float_size : offset + float_size * 2]
-                )[0]
-                z = struct.unpack(
-                    "<f", self.input[offset + float_size * 2 : offset + float_size * 3]
-                )[0]
-                offset += float_size * 3
-
-                vertices[vertex_counter] = [
-                    Token(TokenType.LSQUARE, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, str(x), -1, -1, -1),
-                    Token(TokenType.COMMA, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, str(y), -1, -1, -1),
-                    Token(TokenType.COMMA, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, str(z), -1, -1, -1),
-                    Token(TokenType.RSQUARE, None, -1, -1, -1),
-                ]
-                vertex_counter += 1
-
-            attr_byte_count = int.from_bytes(
-                self.input[offset : offset + 2], byteorder="little"
-            )
-            offset += 2
-
-        if len(vertices) < 3:
-            raise StlError("Malformed binary stl file")
-
-        if len(vertices) % 3 != 0:
-            raise StlError("Malformed binary stl file")
-
-        face_vertices = list(vertices.keys())
-        faces = []
-        for i in range(0, len(face_vertices) - 2, 3):
-            face = [face_vertices[i], face_vertices[i + 1], face_vertices[i + 2]]
-            faces.append(face)
-
-        return Polyhedron(
-            name="stl_model",
-            vertices=vertices,
-            faces=faces,
-            constant_exacts={},
-            constant_floats={},
-            constant_sequence=[],
-        )
-
-
-# Parse STL files into Polyhedron objects
+# Parse STL files into Polyhedron objects using stl-reader library
 class StlParser:
-    def __init__(self, input: str) -> None:
-        self.input = input
+    def __init__(self, filepath: str) -> None:
+        self.filepath = filepath
 
     def parse(self) -> Polyhedron:
+        if stl_reader is None:
+            raise ImportError("stl-reader library is not installed")
+
+        vertices_arr, indices = stl_reader.read(self.filepath)
+
         vertices = {}
+        for i, vertex in enumerate(vertices_arr):
+            vertices[i] = [
+                Token(TokenType.LSQUARE, None, -1, -1, -1),
+                Token(TokenType.FLOAT, str(vertex[0]), -1, -1, -1),
+                Token(TokenType.COMMA, None, -1, -1, -1),
+                Token(TokenType.FLOAT, str(vertex[1]), -1, -1, -1),
+                Token(TokenType.COMMA, None, -1, -1, -1),
+                Token(TokenType.FLOAT, str(vertex[2]), -1, -1, -1),
+                Token(TokenType.RSQUARE, None, -1, -1, -1),
+            ]
+
         faces = []
-
-        lines = self.input.split("\n")
-        vertex_counter = 0
-
-        for line in lines:
-            line = line.strip()
-            if line.startswith("vertex"):
-                parts = line.split()
-                if len(parts) < 4:
-                    raise StlError("Malformed stl file")
-                try:
-                    x, y, z = parts[1], parts[2], parts[3]
-                    float(x)
-                    float(y)
-                    float(z)
-                except ValueError:
-                    raise StlError("Malformed stl file")
-                vertices[vertex_counter] = [
-                    Token(TokenType.LSQUARE, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, x, -1, -1, -1),
-                    Token(TokenType.COMMA, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, y, -1, -1, -1),
-                    Token(TokenType.COMMA, None, -1, -1, -1),
-                    Token(TokenType.FLOAT, z, -1, -1, -1),
-                    Token(TokenType.RSQUARE, None, -1, -1, -1),
-                ]
-                vertex_counter += 1
-
-        if len(vertices) < 3:
-            raise StlError("Malformed stl file")
-
-        if len(vertices) % 3 != 0:
-            raise StlError("Malformed stl file")
-
-        face_vertices = list(vertices.keys())
-        for i in range(0, len(face_vertices) - 2, 3):
-            face = [face_vertices[i], face_vertices[i + 1], face_vertices[i + 2]]
+        for i in range(0, len(indices) - 2, 3):
+            face = [i, i + 1, i + 2]
             faces.append(face)
 
         return Polyhedron(
@@ -1067,12 +976,7 @@ class VisualPolyhedraParser:
 
 def get_parser(filepath: str):
     if filepath.lower().endswith(".stl"):
-        with open(filepath, "rb") as f:
-            data = f.read()
-            if data[:5] == b"solid":
-                return StlParser(data.decode("utf-8", errors="ignore"))
-            else:
-                return BinStlParser(data)
+        return StlParser(filepath)
     else:
         with open(filepath) as f:
             return VisualPolyhedraParser(f.read())
@@ -1142,7 +1046,7 @@ def main():
 
     if args.file:
         p = get_parser(args.file)
-        if isinstance(p, (StlParser, BinStlParser)):
+        if isinstance(p, StlParser):
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
@@ -1168,7 +1072,7 @@ def main():
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
             p = get_parser(filepath)
-            if isinstance(p, (StlParser, BinStlParser)):
+            if isinstance(p, StlParser):
                 polyhedron = p.parse()
             else:
                 polyhedron = p.polyhedron()
