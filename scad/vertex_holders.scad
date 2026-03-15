@@ -106,11 +106,16 @@ module tubular_vertex_holder(vecs, oset=0) {
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
                 hull() {
-                    translate(-base_inset * [v.x, v.y, 0])
-                    translate((oset+TUBE_DEPTH) * v)
-                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff])
+                    translate(-base_inset * [v.x, v.y, 0])  // Move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
+                    translate((oset+TUBE_DEPTH) * v)        // Translate endpoint outwards by v
+                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff]) // Move endpoint downwards to cutoff plane
                     rotate(rotation)
                     cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
+
+                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff+(oset+TUBE_DEPTH)*v.z])
+                    rotate(rotation)
+                    cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
+
 
                     translate(oset * v)
                     rotate(rotation)
@@ -238,4 +243,4 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     }
 }
 
-one_vertex_holder(pentagonal_hexecontahedron_laevo_vertices, pentagonal_hexecontahedron_laevo_edges, 0, type="tubular", oset="best", $fn=60);
+one_vertex_holder(cuboctahedron_vertices, cuboctahedron_edges, 1, type="tubular", oset="best", $fn=60);
