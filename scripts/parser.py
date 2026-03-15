@@ -107,9 +107,8 @@ class VertexFigure:
 
         plane_normal = self.plane_normal()
         normal = self.normal()
-        direction = 1 if np.dot(plane_normal, normal) > 0 else 0
-
-        if normal is not None:
+        if normal is not None and plane_normal is not None:
+            direction = 1 if np.dot(plane_normal, normal) > 0 else 0
             rotated, euler = self.reorient_to(direction * plane_normal)
             self.std = rotated
             self.euler = euler
@@ -117,7 +116,7 @@ class VertexFigure:
         self.tag = tag
 
     def normalizable(self) -> bool:
-        return bool(self.normal)
+        return self.normal() is not None
 
     def normal(self) -> Optional[np.ndarray]:
         n = np.sum(self.vecs, axis=0)
@@ -238,7 +237,7 @@ class Polyhedron:
                     case TokenType.NAME:
                         evaluated.append(neg * self.constant_floats[token.lexeme])
                     case _:
-                        print("bad")
+                        raise ValueError("Bad token encountered while evaluating vertices")
 
             vertices[vertex] = evaluated
         return vertices
