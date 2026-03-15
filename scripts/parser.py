@@ -6,6 +6,8 @@ import os
 import glob
 import subprocess
 
+import struct
+
 import numpy as np
 
 
@@ -149,7 +151,6 @@ class VertexFigure:
             # y = -90 degrees
             return [float(np.atan2(-R[1, 2], R[1, 1])), -90, 0]
 
-
     # Orient normal to target, then apply this rotation to all vectors in the
     # figure
     def reorient_to(
@@ -237,7 +238,9 @@ class Polyhedron:
                     case TokenType.NAME:
                         evaluated.append(neg * self.constant_floats[token.lexeme])
                     case _:
-                        raise ValueError("Bad token encountered while evaluating vertices")
+                        raise ValueError(
+                            "Bad token encountered while evaluating vertices"
+                        )
 
             vertices[vertex] = evaluated
         return vertices
@@ -501,6 +504,78 @@ class StlError(Exception):
     pass
 
 
+# Parse binary STL files into Polyhedron objects
+class BinStlParser:
+    def __init__(self, input: bytes) -> None:
+        self.input = input
+
+    def parse(self) -> Polyhedron:
+        if len(self.input) < 84:
+            raise StlError("STL file too small")
+
+        header = self.input[0:80].decode("utf-8", errors="ignore")
+        num_triangles = int.from_bytes(self.input[80:84], byteorder="little")
+
+        vertices = {}
+        vertex_counter = 0
+
+        offset = 84
+        for _ in range(num_triangles):
+            if offset + 50 > len(self.input):
+                raise StlError("Malformed binary stl file")
+
+            float_size = 4
+            normal = self.input[offset : offset + float_size * 3]
+            offset += float_size * 3
+
+            for _ in range(3):
+                x = struct.unpack("<f", self.input[offset : offset + float_size])[0]
+                y = struct.unpack(
+                    "<f", self.input[offset + float_size : offset + float_size * 2]
+                )[0]
+                z = struct.unpack(
+                    "<f", self.input[offset + float_size * 2 : offset + float_size * 3]
+                )[0]
+                offset += float_size * 3
+
+                vertices[vertex_counter] = [
+                    Token(TokenType.LSQUARE, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, str(x), -1, -1, -1),
+                    Token(TokenType.COMMA, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, str(y), -1, -1, -1),
+                    Token(TokenType.COMMA, None, -1, -1, -1),
+                    Token(TokenType.FLOAT, str(z), -1, -1, -1),
+                    Token(TokenType.RSQUARE, None, -1, -1, -1),
+                ]
+                vertex_counter += 1
+
+            attr_byte_count = int.from_bytes(
+                self.input[offset : offset + 2], byteorder="little"
+            )
+            offset += 2
+
+        if len(vertices) < 3:
+            raise StlError("Malformed binary stl file")
+
+        if len(vertices) % 3 != 0:
+            raise StlError("Malformed binary stl file")
+
+        face_vertices = list(vertices.keys())
+        faces = []
+        for i in range(0, len(face_vertices) - 2, 3):
+            face = [face_vertices[i], face_vertices[i + 1], face_vertices[i + 2]]
+            faces.append(face)
+
+        return Polyhedron(
+            name="stl_model",
+            vertices=vertices,
+            faces=faces,
+            constant_exacts={},
+            constant_floats={},
+            constant_sequence=[],
+        )
+
+
 # Parse STL files into Polyhedron objects
 class StlParser:
     def __init__(self, input: str) -> None:
@@ -526,8 +601,7 @@ class StlParser:
                     float(z)
                 except ValueError:
                     raise StlError("Malformed stl file")
-                vertex_name = f"v{vertex_counter}"
-                vertices[vertex_name] = [
+                vertices[vertex_counter] = [
                     Token(TokenType.LSQUARE, None, -1, -1, -1),
                     Token(TokenType.FLOAT, x, -1, -1, -1),
                     Token(TokenType.COMMA, None, -1, -1, -1),
@@ -993,8 +1067,12 @@ class VisualPolyhedraParser:
 
 def get_parser(filepath: str):
     if filepath.lower().endswith(".stl"):
-        with open(filepath) as f:
-            return StlParser(f.read())
+        with open(filepath, "rb") as f:
+            data = f.read()
+            if data[:5] == b"solid":
+                return StlParser(data.decode("utf-8", errors="ignore"))
+            else:
+                return BinStlParser(data)
     else:
         with open(filepath) as f:
             return VisualPolyhedraParser(f.read())
@@ -1030,7 +1108,9 @@ def main():
         "--rod-inset", type=float, help="Vertex holders will inset edges by this amount"
     )
     parser.add_argument(
-        "--global-offset", type=float, help="If --offset-type is global, then set all offsets to this value"
+        "--global-offset",
+        type=float,
+        help="If --offset-type is global, then set all offsets to this value",
     )
     parser.add_argument(
         "--min-printer-overhang-angle",
@@ -1062,7 +1142,7 @@ def main():
 
     if args.file:
         p = get_parser(args.file)
-        if isinstance(p, StlParser):
+        if isinstance(p, (StlParser, BinStlParser)):
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
@@ -1088,7 +1168,7 @@ def main():
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
             p = get_parser(filepath)
-            if isinstance(p, StlParser):
+            if isinstance(p, (StlParser, BinStlParser)):
                 polyhedron = p.parse()
             else:
                 polyhedron = p.polyhedron()
