@@ -1,6 +1,8 @@
 use <vertex_holders.scad>
 use <solids.scad>
 
+// The python script sets all of these global variables with the -D flag
+// Values here are defaults.
 EDGE_DIAMETER = 3.0;
 DIAMETER_TOLERANCE_FIT = 0.35;
 DIAMETER_TAPER_DECREASE = 0.10;
@@ -20,6 +22,7 @@ BY_TAG = true;
 INDEX = 0;
 COLORS = ["red", "green", "blue"];
 
+// Openscad hangs if you don't set these lists with a flag
 vertices = [];
 edges = [];
 vertex_figures = [];
@@ -30,7 +33,7 @@ offsets = [];
 
 module vertex_holder(holder_offset, index) {
     vertex_figure = vertex_figures[index];
-    color(COLORS[index % 3])
+    color(COLORS[index % len(COLORS)])
     if (VERTEX_TYPE == "tubular") {
         tubular_vertex_holder(vertex_figure, oset=holder_offset);
     } else if (VERTEX_TYPE == "conical") {
@@ -50,7 +53,7 @@ module solid(holder_offset) {
         translate(norm_dist * vertex)
         // The python script gives rotations in radians.
         rotate(euler * 180 / PI)
-        color(COLORS[tag % 3])
+        color(COLORS[tag % len(COLORS)])
         if (VERTEX_TYPE == "tubular") {
             tubular_vertex_holder(vertex_figure, oset=holder_offset);
         } else if (VERTEX_TYPE == "conical") {
