@@ -8,10 +8,7 @@ import subprocess
 
 import numpy as np
 
-try:
-    import stl_reader
-except ImportError:
-    stl_reader = None
+import stl_reader
 
 
 class TokenType(Enum):
@@ -201,10 +198,102 @@ class VertexFigure:
 
 
 class Polyhedron:
+    def __init__(self, name, vertices, faces) -> None:
+        self.faces = faces
+        self.name = name
+
+        self.vertices: dict[int, list[float]] = vertices
+        self.edges: dict[list[int], list[...]] = self.make_edgelist()
+        self.vertex_figures = self.annotate_vertex_figures()
+
+    # Return vertex coordinates in sorted order
+    def vertex_coordinates(self):
+        vertex_keys = sorted(self.vertices.keys())
+        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
+        return vertices_arr
+
+    # Convert facelist into edgelist
+    def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
+        edges = set()
+        for face in self.faces:
+            for v1, v2 in zip(face, face[1:] + [face[0]]):
+                v1_int = int(v1)
+                v2_int = int(v2)
+                if v1_int in self.vertices and v2_int in self.vertices:
+                    edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
+
+        edge_lengths = []
+        for v1, v2 in edges:
+            v1_arr = np.array(self.vertices[v1])
+            v2_arr = np.array(self.vertices[v2])
+            length = np.linalg.norm(v2_arr - v1_arr)
+            edge_lengths.append((length, v1, v2))
+
+        edge_lengths.sort(key=lambda x: x[0])
+        return {
+            (v1, v2): (name, length)
+            for name, [length, v1, v2] in enumerate(edge_lengths)
+        }
+
+    def vertex_figure_signature(self, vecs) -> tuple[int, ...]:
+        precision = 100000
+        n = len(vecs)
+        dots = sorted(
+            [
+                round(np.dot(vecs[i], vecs[j]) * precision)
+                for i in range(n)
+                for j in range(i, n)
+            ]
+        )
+        triples = sorted(
+            [
+                round(np.dot(np.cross(vecs[i], vecs[j]), vecs[k]) * precision)
+                for i in range(n)
+                for j in range(n)
+                for k in range(n)
+            ]
+        )
+        return tuple(dots + triples)
+
+    def annotate_vertex_figures(self) -> list[VertexFigure]:
+        vertices_arr = self.vertex_coordinates()
+
+        tags = {}
+        tag = 0
+        vertex_figures = []
+        for i, vertex in enumerate(vertices_arr):
+            neighbors = [
+                e[1] if e[0] == i else (e[0] if e[1] == i else None)
+                for e in self.edges.keys()
+            ]
+            neighbors = [n for n in neighbors if n is not None]
+            vecs = [(vertices_arr[n] - vertex) for n in neighbors]
+            vecs = [
+                v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
+            ]
+            signature = self.vertex_figure_signature(vecs)
+            if signature not in tags:
+                tags[signature] = tag
+                tag += 1
+
+            vertex_figures.append(
+                VertexFigure(vertex, np.array(vecs), neighbors, tags[signature])
+            )
+
+        return vertex_figures
+
+
+class VisualPolyhedron(Polyhedron):
     def __init__(
-        self, name, vertices, faces, constant_exacts, constant_floats, constant_sequence
+        self,
+        name,
+        vertex_tokenstream,
+        faces,
+        constant_exacts,
+        constant_floats,
+        constant_sequence,
     ) -> None:
-        self.vertex_tokenstream = vertices
+        self.vertex_tokenstream = vertex_tokenstream
 
         self.faces = faces
         self.name = name
@@ -216,12 +305,6 @@ class Polyhedron:
         self.vertices: dict[int, list[float]] = self.evaluate_vertices()
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
-
-    # Return vertex coordinates in sorted order
-    def vertex_coordinates(self):
-        vertex_keys = sorted(self.vertices.keys())
-        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
-        return vertices_arr
 
     def evaluate_vertices(self):
         vertices = {}
@@ -247,28 +330,6 @@ class Polyhedron:
 
             vertices[vertex] = evaluated
         return vertices
-
-    def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
-        edges = set()
-        for face in self.faces:
-            for v1, v2 in zip(face, face[1:] + [face[0]]):
-                v1_int = int(v1)
-                v2_int = int(v2)
-                if v1_int in self.vertices and v2_int in self.vertices:
-                    edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
-
-        edge_lengths = []
-        for v1, v2 in edges:
-            v1_arr = np.array(self.vertices[v1])
-            v2_arr = np.array(self.vertices[v2])
-            length = np.linalg.norm(v2_arr - v1_arr)
-            edge_lengths.append((length, v1, v2))
-
-        edge_lengths.sort(key=lambda x: x[0])
-        return {
-            (v1, v2): (name, length)
-            for name, [length, v1, v2] in enumerate(edge_lengths)
-        }
 
     def openscad_vertices(self) -> list[Token]:
         tokenstream = [
@@ -342,53 +403,6 @@ class Polyhedron:
         tokenstream += self.openscad_vertices()
         tokenstream += self.openscad_edges()
         return "".join([x.literal() for x in tokenstream])
-
-    def vertex_figure_signature(self, vecs) -> tuple[int, ...]:
-        precision = 100000
-        n = len(vecs)
-        dots = sorted(
-            [
-                round(np.dot(vecs[i], vecs[j]) * precision)
-                for i in range(n)
-                for j in range(i, n)
-            ]
-        )
-        triples = sorted(
-            [
-                round(np.dot(np.cross(vecs[i], vecs[j]), vecs[k]) * precision)
-                for i in range(n)
-                for j in range(n)
-                for k in range(n)
-            ]
-        )
-        return tuple(dots + triples)
-
-    def annotate_vertex_figures(self) -> list[VertexFigure]:
-        vertices_arr = self.vertex_coordinates()
-
-        tags = {}
-        tag = 0
-        vertex_figures = []
-        for i, vertex in enumerate(vertices_arr):
-            neighbors = [
-                e[1] if e[0] == i else (e[0] if e[1] == i else None)
-                for e in self.edges.keys()
-            ]
-            neighbors = [n for n in neighbors if n is not None]
-            vecs = [(vertices_arr[n] - vertex) for n in neighbors]
-            vecs = [
-                v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
-            ]
-            signature = self.vertex_figure_signature(vecs)
-            if signature not in tags:
-                tags[signature] = tag
-                tag += 1
-
-            vertex_figures.append(
-                VertexFigure(vertex, np.array(vecs), neighbors, tags[signature])
-            )
-
-        return vertex_figures
 
 
 class GlobalOptions:
@@ -510,36 +524,13 @@ class StlParser:
         self.filepath = filepath
 
     def parse(self) -> Polyhedron:
-        if stl_reader is None:
-            raise ImportError("stl-reader library is not installed")
-
         vertices_arr, indices = stl_reader.read(self.filepath)
 
         vertices = {}
         for i, vertex in enumerate(vertices_arr):
-            vertices[i] = [
-                Token(TokenType.LSQUARE, None, -1, -1, -1),
-                Token(TokenType.FLOAT, str(vertex[0]), -1, -1, -1),
-                Token(TokenType.COMMA, None, -1, -1, -1),
-                Token(TokenType.FLOAT, str(vertex[1]), -1, -1, -1),
-                Token(TokenType.COMMA, None, -1, -1, -1),
-                Token(TokenType.FLOAT, str(vertex[2]), -1, -1, -1),
-                Token(TokenType.RSQUARE, None, -1, -1, -1),
-            ]
+            vertices[i] = vertex
 
-        faces = []
-        for i in range(0, len(indices) - 2, 3):
-            face = [i, i + 1, i + 2]
-            faces.append(face)
-
-        return Polyhedron(
-            name="stl_model",
-            vertices=vertices,
-            faces=faces,
-            constant_exacts={},
-            constant_floats={},
-            constant_sequence=[],
-        )
+        return Polyhedron(name="stl_model", vertices=vertices, faces=indices.tolist())
 
 
 # Lex Visual Polyhedra files
@@ -954,7 +945,7 @@ class VisualPolyhedraParser:
         vertices = {int(name[1:]): rest for name, rest in self.vertices.items()}
         faces = [[int(v) for v in f] for f in self.faces]
 
-        return Polyhedron(
+        return VisualPolyhedron(
             self.name,
             vertices,
             faces,
@@ -1029,7 +1020,7 @@ def main():
     parser.add_argument(
         "--offset-type",
         choices=["best", "global", "local"],
-        help="Offset type. Best computes an identical offset for each vertex in your solid. Local computes a unique offset for each vertex. Global sets all offsets to the value of -global---offset",
+        help="Offset type. Best computes an identical offset for each vertex in your solid. Local computes a unique offset for each vertex. Global sets all offsets to the value of --global-offset",
     )
     parser.add_argument(
         "--object-type", choices=["vertex_holder", "solid"], help="Object type"
@@ -1076,7 +1067,7 @@ def main():
                 polyhedron = p.parse()
             else:
                 polyhedron = p.polyhedron()
-            print(polyhedron.openscad())
+                print(polyhedron.openscad())
 
 
 if __name__ == "__main__":
