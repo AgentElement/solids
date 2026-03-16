@@ -106,9 +106,12 @@ module tubular_vertex_holder(vecs, oset=0) {
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
                 hull() {
-                    translate(-base_inset * [v.x, v.y, 0])  // Move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
-                    translate((oset+TUBE_DEPTH) * v)        // Translate endpoint outwards by v
-                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff]) // Move endpoint downwards to cutoff plane
+                    // Move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
+                    translate(-base_inset * [v.x, v.y, 0])
+                    // Translate endpoint outwards by v
+                    translate((oset+TUBE_DEPTH) * v)
+                    // Move endpoint downwards to cutoff plane
+                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff])
                     rotate(rotation)
                     cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
 
