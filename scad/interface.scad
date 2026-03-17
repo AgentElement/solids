@@ -16,7 +16,7 @@ OUTER_TUBE_RADIUS = EDGE_DIAMETER/2+WALL_THICKNESS;
 
 
 VERTEX_TYPE = "tubular";    // tubular, conical
-OFFSET_TYPE = "best";       // best, global, local
+OFFSET_TYPE = "best";       // per_half_edge, per_vertex, per_solid, global
 
 OBJECT = "vertex_holder";   // vertex_holder, solid
 BY_TAG = true;
@@ -65,9 +65,10 @@ module solid(holder_offset) {
 
 module main() {
     holder_offset =
-        OFFSET_TYPE == "best" ? best_offset(vertex_figures) :
+        OFFSET_TYPE == "per_solid" ? best_offset(vertex_figures) :
         OFFSET_TYPE == "global" ? GLOBAL_CATALAN_OFFSET :
-        OFFSET_TYPE == "local" ? 0 :
+        OFFSET_TYPE == "per_vertex" ? 0 :
+        OFFSET_TYPE == "per_half_edge" ? -1 :
         GLOBAL_OFFSET;
 
     if (OBJECT == "vertex_holder") {

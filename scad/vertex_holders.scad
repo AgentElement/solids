@@ -69,12 +69,19 @@ function min_angle_pair(v, i=0, j=1, b=[-2]) =
     j + 1 < len(v) ? min_angle_pair(v, i, j+1, nb) : min_angle_pair(v, i+1, i+2, nb);
 
 // Return the vector with minimum cosine distance to t; assume that t = vecs[0]
-function min_cos_dist(t, vecs) =
+function min_cos_dist(index, vecs) =
     let (
-        scores = [for(i=[1:len(vecs)-1]) (t * vecs[i]) / norm(vecs[i])],
+        scores = [for(i=[1:len(vecs)-1])
+            i == index ?
+                -1000 :
+                (vecs[index] * vecs[i]) / norm(vecs[i])],
         ix = search(max(scores), scores)[0]
     )
     vecs[ix+1];
+
+function offset_from_single_vec(index, vecs) =
+    let ( closest = min_cos_dist(index, vecs) )
+    axis_offset(vecs[index], closest, OUTER_TUBE_RADIUS, EDGE_DIAMETER/2);
 
 function offset_from_vecs(vecs) =
     let (
@@ -95,20 +102,22 @@ function best_offset(vecs) =
     best;
 
 module tubular_vertex_holder(vecs, oset=0) {
-    // If no offset is specified, select a local offset
-    oset = (oset == 0) ? offset_from_vecs(vecs): oset;
-    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
+    // If no offset is specified, select a vertex-specific offset
+    vertex_offset = (oset <= 0) ? offset_from_vecs(vecs): oset;
+    cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);
 
     difference() {
-        for(v=vecs) {
+        for(i=[0:len(vecs)-1]) {
+            v = vecs[i];
             rotation = direction_to_euler(v);
+            half_edge_offset = (oset == -1) ? offset_from_single_vec(i, vecs) : vertex_offset;
 
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
-                lowest_top_point = lowest_line_on_cylinder(v, oset+TUBE_DEPTH, OUTER_TUBE_RADIUS);
+                lowest_top_point = lowest_line_on_cylinder(v, half_edge_offset+TUBE_DEPTH, OUTER_TUBE_RADIUS);
                 base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
-                clamped_base_position = min(max(oset + TUBE_DEPTH - base_inset, 0), norm([lowest_top_point.x, lowest_top_point.y]));
-                tube_top_to_cutoff_plane = -OUTER_TUBE_RADIUS-lowest_top_point.z+cutoff+(oset+TUBE_DEPTH)*v.z;
+                clamped_base_position = min(max(half_edge_offset + TUBE_DEPTH - base_inset, 0), norm([lowest_top_point.x, lowest_top_point.y]));
+                tube_top_to_cutoff_plane = -OUTER_TUBE_RADIUS-lowest_top_point.z+cutoff+(half_edge_offset+TUBE_DEPTH)*v.z;
                 hull() {
                     // First, move endpoint to tube length.
                     // Then move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
@@ -124,13 +133,13 @@ module tubular_vertex_holder(vecs, oset=0) {
                     cube([0.1, OUTER_TUBE_RADIUS, 0.1], center=true);
 
 
-                    translate(oset * v)
+                    translate(half_edge_offset * v)
                     rotate(rotation)
                     difference() {
                         union() {
                             cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
-                            translate([0, 0, -oset])
-                            cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+oset);
+                            translate([0, 0, -half_edge_offset])
+                            cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
                         }
                         translate([-50+(EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT)/2, 0, 0])
                         cube([100, 100, 100], center=true);
@@ -139,18 +148,20 @@ module tubular_vertex_holder(vecs, oset=0) {
             }
 
             // Tubes
-            translate(oset * v)
+            translate(half_edge_offset * v)
             rotate(rotation)
             union() {
                 cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
-                translate([0, 0, -oset])
-                cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+oset);
+                translate([0, 0, -half_edge_offset])
+                cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
             }
         }
 
-        for(v=vecs) {
+        for(i=[0:len(vecs)-1]) {
+            v = vecs[i];
             rotation = direction_to_euler(v);
-            translate(oset * v)
+            half_edge_offset = (oset == -1) ? offset_from_single_vec(i, vecs) : vertex_offset;
+            translate(half_edge_offset * v)
             rotate(rotation)
             // A tiny offset is added to the length of the internal cylinder
             // to prevent z-fighting on the top surface
@@ -168,23 +179,23 @@ module tubular_vertex_holder(vecs, oset=0) {
 
 module conical_vertex_holder(vecs, oset=0) {
     // If no offset is specified, select a local offset
-    oset = (oset == 0) ? offset_from_vecs(vecs): oset;
-    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
+    vertex_offset = (vertex_offset == 0) ? offset_from_vecs(vecs): vertex_offset;
+    cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);
 
     difference() {
         hull() {
             for(v=vecs) {
                 rotation = direction_to_euler(v);
-                translate(oset * v)
+                translate(vertex_offset * v)
                 rotate(rotation)
-                translate([0, 0, -oset])
-                linear_extrude(TUBE_DEPTH+oset)
+                translate([0, 0, -vertex_offset])
+                linear_extrude(TUBE_DEPTH+vertex_offset)
                 circle(r=OUTER_TUBE_RADIUS);
             }
         }
         for (v=vecs) {
             rotation = direction_to_euler(v);
-            translate(oset * v)
+            translate(vertex_offset * v)
             rotate(rotation)
             translate([0, 0, WALL_THICKNESS])
             cylinder(
@@ -199,11 +210,14 @@ module conical_vertex_holder(vecs, oset=0) {
 
 module all_vertex_holders(vertices, edges, tag, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
-    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
+    vertex_figures = [for (i=[0:len(figs)-1]) figs[i][1]];
     holder_offset =
-        oset == "best" ? best_offset(vecs) :
-        oset == "global" ? GLOBAL_CATALAN_OFFSET :
-        GLOBAL_CATALAN_OFFSET;
+        OFFSET_TYPE == "per_solid" ? best_offset(vertex_figures) :
+        OFFSET_TYPE == "global" ? GLOBAL_CATALAN_OFFSET :
+        OFFSET_TYPE == "per_vertex" ? 0 :
+        OFFSET_TYPE == "per_half_edge" ? -1 :
+        GLOBAL_OFFSET;
+
     colors = ["red", "blue", "green"];
 
     for(i=[0:len(figs)-1]) {
@@ -227,12 +241,14 @@ module all_vertex_holders(vertices, edges, tag, type="tubular", oset="best") {
 
 module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
     figs = annotated_vertex_figures(vertices, edges);
-    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
+    vertex_figures = [for (i=[0:len(figs)-1]) figs[i][1]];
     holder_offset =
-        oset == "best" ? best_offset(vecs) :
-        oset == "global" ? GLOBAL_CATALAN_OFFSET :
-        oset == "local" ? 0 :
-        GLOBAL_CATALAN_OFFSET;
+        OFFSET_TYPE == "per_solid" ? best_offset(vertex_figures) :
+        OFFSET_TYPE == "global" ? GLOBAL_CATALAN_OFFSET :
+        OFFSET_TYPE == "per_vertex" ? 0 :
+        OFFSET_TYPE == "per_half_edge" ? -1 :
+        GLOBAL_OFFSET;
+
     colors = ["red", "blue", "green"];
 
     // Filter to find the indices of all figures where tag == 1

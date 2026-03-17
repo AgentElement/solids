@@ -69,14 +69,16 @@ module unit_sphere() {
 function max_dist(v) = max([for(i=v) norm(i)]);
 function arg_max_dist(v) = let(d=[for(i=v) norm(i)]) v[search(max(d), d)[0]];
 
-module hedron(vertices, edges, name="", type="tubular", oset="best") {
+module hedron(vertices, edges, name="", type="tubular", oset="per_solid") {
     figs = annotated_vertex_figures(vertices, edges);
-    vecs = [for (i=[0:len(figs)-1]) figs[i][1]];
+    vertex_figures = [for (i=[0:len(figs)-1]) figs[i][1]];
 
     holder_offset =
-        oset == "best" ? best_offset(vecs) :
-        oset == "global" ? GLOBAL_CATALAN_OFFSET :
-        GLOBAL_CATALAN_OFFSET;
+        OFFSET_TYPE == "per_solid" ? best_offset(vertex_figures) :
+        OFFSET_TYPE == "global" ? GLOBAL_CATALAN_OFFSET :
+        OFFSET_TYPE == "per_vertex" ? 0 :
+        OFFSET_TYPE == "per_half_edge" ? -1 :
+        GLOBAL_OFFSET;
 
     norm_dist = RADIUS / max_dist(vertices);
     print_edge_lengths(vertices, edges, figs, holder_offset, name);

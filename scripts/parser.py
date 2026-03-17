@@ -438,7 +438,7 @@ class GlobalOptions:
         global_offset: float = 7.72,
         min_printer_overhang_angle: float = 30,
         vertex_type: str = "tubular",
-        offset_type: str = "best",
+        offset_type: str = "per_solid",
         object_type: str = "solid",
         by_tag: bool = True,
         index: int = 0,
@@ -1036,7 +1036,7 @@ def main():
     )
     parser.add_argument(
         "--offset-type",
-        choices=["best", "global", "local"],
+        choices=["per_solid", "global", "per_vertex", "per_half_edge"],
         help="Offset type. Best computes an identical offset for each vertex in your solid. "
         "Local computes a unique offset for each vertex. Global sets all offsets to the value of "
         "--global-offset",
