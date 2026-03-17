@@ -202,15 +202,9 @@ class Polyhedron:
         self.faces = faces
         self.name = name
 
-        self.vertices: dict[int, list[float]] = vertices
+        self.vertices: np.ndarray = vertices
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
-
-    # Return vertex coordinates in sorted order
-    def vertex_coordinates(self):
-        vertex_keys = sorted(self.vertices.keys())
-        vertices_arr = np.array([self.vertices[v] for v in vertex_keys])
-        return vertices_arr
 
     # Convert facelist into edgelist
     def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
@@ -219,13 +213,13 @@ class Polyhedron:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
                 v1_int = int(v1)
                 v2_int = int(v2)
-                if v1_int in self.vertices and v2_int in self.vertices:
+                if v1_int < len(self.vertices) and v2_int < len(self.vertices):
                     edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
 
         edge_lengths = []
         for v1, v2 in edges:
-            v1_arr = np.array(self.vertices[v1])
-            v2_arr = np.array(self.vertices[v2])
+            v1_arr = self.vertices[v1]
+            v2_arr = self.vertices[v2]
             length = np.linalg.norm(v2_arr - v1_arr)
             edge_lengths.append((length, v1, v2))
 
@@ -256,7 +250,7 @@ class Polyhedron:
         return tuple(dots + triples)
 
     def annotate_vertex_figures(self) -> list[VertexFigure]:
-        vertices_arr = self.vertex_coordinates()
+        vertices_arr = self.vertices
 
         tags = {}
         tag = 0
@@ -302,7 +296,7 @@ class VisualPolyhedron(Polyhedron):
         self.constant_floats = constant_floats
         self.constant_sequence = constant_sequence
 
-        self.vertices: dict[int, list[float]] = self.evaluate_vertices()
+        self.vertices: np.ndarray = self.evaluate_vertices()
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
 
@@ -328,7 +322,9 @@ class VisualPolyhedron(Polyhedron):
                             "Bad token encountered while evaluating vertices"
                         )
 
-            vertices[vertex] = evaluated
+            vertices[int(vertex[1:])] = evaluated
+        vertex_keys = sorted(vertices.keys())
+        vertices = np.array([vertices[v] for v in vertex_keys])
         return vertices
 
     def openscad_vertices(self) -> list[Token]:
@@ -450,7 +446,7 @@ class GlobalOptions:
         self.offsets = offsets
 
     def polyhedron_options_array(self, polyhedron: Polyhedron):
-        vertices = polyhedron.vertex_coordinates()
+        vertices = polyhedron.vertices
         edges = polyhedron.edges.keys()
         vertex_figures = []
         eulers = []
@@ -526,11 +522,9 @@ class StlParser:
     def parse(self) -> Polyhedron:
         vertices_arr, indices = stl_reader.read(self.filepath)
 
-        vertices = {}
-        for i, vertex in enumerate(vertices_arr):
-            vertices[i] = vertex
-
-        return Polyhedron(name="stl_model", vertices=vertices, faces=indices.tolist())
+        return Polyhedron(
+            name="stl_model", vertices=vertices_arr, faces=indices.tolist()
+        )
 
 
 # Lex Visual Polyhedra files
@@ -942,12 +936,11 @@ class VisualPolyhedraParser:
             self.constant_where_sequence + self.constant_def_sequence
         )
 
-        vertices = {int(name[1:]): rest for name, rest in self.vertices.items()}
         faces = [[int(v) for v in f] for f in self.faces]
 
         return VisualPolyhedron(
             self.name,
-            vertices,
+            self.vertices,
             faces,
             self.constant_exacts,
             self.constant_floats,
