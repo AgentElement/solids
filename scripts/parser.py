@@ -7,7 +7,7 @@ import glob
 import subprocess
 
 import numpy as np
-
+import pymeshlab
 import stl_reader
 
 
@@ -199,12 +199,15 @@ class VertexFigure:
 
 class Polyhedron:
     def __init__(self, name, vertices, faces) -> None:
-        self.faces = faces
         self.name = name
-
+        self.faces = faces
         self.vertices: np.ndarray = vertices
+
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+
+    def average_edge_length(self) -> float:
+        return np.sum([length for _, length in self.edges.values()]) / len(self.edges)
 
     # Convert facelist into edgelist
     def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
@@ -275,6 +278,27 @@ class Polyhedron:
             )
 
         return vertex_figures
+
+    def isotropize(self):
+        ms = pymeshlab.MeshSet()
+
+        ms.add_mesh(pymeshlab.Mesh(self.vertices, self.faces))
+
+        average_edge_length = self.average_edge_length()
+
+        ms.apply_filter(
+            "meshing_isotropic_explicit_remeshing",
+            iterations=5,
+            targetlen=pymeshlab.PureValue(average_edge_length),
+            featuredeg=10,
+            adaptive=False,
+        )
+
+        mesh = ms.current_mesh()
+        self.vertices = mesh.vertex_matrix()
+        self.faces = mesh.face_matrix().tolist()
+        self.edges: dict[list[int], list[...]] = self.make_edgelist()
+        self.vertex_figures = self.annotate_vertex_figures()
 
 
 class VisualPolyhedron(Polyhedron):
@@ -1013,7 +1037,9 @@ def main():
     parser.add_argument(
         "--offset-type",
         choices=["best", "global", "local"],
-        help="Offset type. Best computes an identical offset for each vertex in your solid. Local computes a unique offset for each vertex. Global sets all offsets to the value of --global-offset",
+        help="Offset type. Best computes an identical offset for each vertex in your solid. "
+        "Local computes a unique offset for each vertex. Global sets all offsets to the value of "
+        "--global-offset",
     )
     parser.add_argument(
         "--object-type", choices=["vertex_holder", "solid"], help="Object type"
@@ -1025,6 +1051,11 @@ def main():
     )
     parser.add_argument("--index")
     parser.add_argument("--colors", nargs="+", help="Color scheme for previews")
+    parser.add_argument(
+        "--isotropize",
+        action="store_true",
+        help="Enable isotropic remeshing",
+    )
 
     args = parser.parse_args()
 
@@ -1034,6 +1065,8 @@ def main():
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
+            if args.isotropize:
+                polyhedron.isotropize()
         options_dict = {
             "edge_diameter": args.edge_diameter,
             "diameter_tolerance_fit": args.diameter_tolerance_fit,
@@ -1060,6 +1093,8 @@ def main():
                 polyhedron = p.parse()
             else:
                 polyhedron = p.polyhedron()
+                if args.isotropize:
+                    polyhedron.isotropize()
                 print(polyhedron.openscad())
 
 
