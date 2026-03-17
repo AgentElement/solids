@@ -1065,8 +1065,8 @@ def main():
             polyhedron = p.parse()
         else:
             polyhedron = p.polyhedron()
-            if args.isotropize:
-                polyhedron.isotropize()
+        if args.isotropize:
+            polyhedron.isotropize()
         options_dict = {
             "edge_diameter": args.edge_diameter,
             "diameter_tolerance_fit": args.diameter_tolerance_fit,
@@ -1093,8 +1093,8 @@ def main():
                 polyhedron = p.parse()
             else:
                 polyhedron = p.polyhedron()
-                if args.isotropize:
-                    polyhedron.isotropize()
+            if args.isotropize:
+                polyhedron.isotropize()
                 print(polyhedron.openscad())
 
 
