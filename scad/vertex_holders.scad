@@ -3,8 +3,8 @@ include <geometry.scad>
 include <constants.scad>
 
 
-// Lowest point on the top surface of a cylinder
-function lowest_point_top_surface_cylinder(l, r, v) =
+// Locus of lowest points along a cylinder. v is axis, r is radius, l is parameter
+function lowest_line_on_cylinder(v, l, r) =
     let(
         uv = v / norm(v),
         center = uv * l,
@@ -23,11 +23,12 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
+
 // Height to translate the vertex holder before making the xy cut
 function cutoff_height(v, l, r) =
     v.z >= 0 ?
-        (l * v.z - r * norm([v.x, v.y])) / norm(v):
-        lowest_point_top_surface_cylinder(l+TUBE_DEPTH, r, v).z;
+        lowest_line_on_cylinder(v, l, r).z:
+        lowest_line_on_cylinder(v, l+TUBE_DEPTH, r).z;
 
 
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
@@ -94,10 +95,9 @@ function best_offset(vecs) =
     best;
 
 module tubular_vertex_holder(vecs, oset=0) {
-    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
-
     // If no offset is specified, select a local offset
     oset = (oset == 0) ? offset_from_vecs(vecs): oset;
+    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
 
     difference() {
         for(v=vecs) {
@@ -105,7 +105,7 @@ module tubular_vertex_holder(vecs, oset=0) {
 
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
-                lowest_top_point = lowest_point_top_surface_cylinder(oset+TUBE_DEPTH, OUTER_TUBE_RADIUS, v);
+                lowest_top_point = lowest_line_on_cylinder(v, oset+TUBE_DEPTH, OUTER_TUBE_RADIUS);
                 base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
                 clamped_base_position = min(max(oset + TUBE_DEPTH - base_inset, 0), norm([lowest_top_point.x, lowest_top_point.y]));
                 tube_top_to_cutoff_plane = -OUTER_TUBE_RADIUS-lowest_top_point.z+cutoff+(oset+TUBE_DEPTH)*v.z;
@@ -139,19 +139,25 @@ module tubular_vertex_holder(vecs, oset=0) {
             }
 
             // Tubes
-            #translate(oset * v)
+            translate(oset * v)
             rotate(rotation)
             union() {
-                difference() {
-                    cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
-                    cylinder(
-                        d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
-                        d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
-                        h=TUBE_DEPTH);
-                }
+                cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
                 translate([0, 0, -oset])
                 cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+oset);
             }
+        }
+
+        for(v=vecs) {
+            rotation = direction_to_euler(v);
+            translate(oset * v)
+            rotate(rotation)
+            // A tiny offset is added to the length of the internal cylinder
+            // to prevent z-fighting on the top surface
+            cylinder(
+                d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
+                d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
+                h=TUBE_DEPTH+0.01);
         }
 
         // Flat bottom plane
@@ -161,6 +167,8 @@ module tubular_vertex_holder(vecs, oset=0) {
 }
 
 module conical_vertex_holder(vecs, oset=0) {
+    // If no offset is specified, select a local offset
+    oset = (oset == 0) ? offset_from_vecs(vecs): oset;
     cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
 
     difference() {
