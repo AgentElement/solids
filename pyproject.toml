@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.4.2",
+    "pymeshlab>=2025.7.post1",
     "stl-reader>=0.2.3",
 ]
