@@ -24,7 +24,11 @@ function direction_to_euler(v) =
     ];
 
 // Height to translate the vertex holder before making the xy cut
-function cutoff_height(v, l, r) = (l * v[2] - r * norm([v[0], v[1]])) / norm(v);
+function cutoff_height(v, l, r) =
+    v.z >= 0 ?
+        (l * v.z - r * norm([v.x, v.y])) / norm(v):
+        lowest_point_top_surface_cylinder(l+TUBE_DEPTH, r, v).z;
+
 
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
 // just touch the inner cylinders (radius r).
@@ -77,7 +81,7 @@ function offset_from_vecs(vecs) =
         v0 = pair[0],
         v1 = pair[1]
     )
-    axis_offset(v0, v1, EDGE_DIAMETER/2+WALL_THICKNESS, EDGE_DIAMETER/2);
+    axis_offset(v0, v1, OUTER_TUBE_RADIUS, EDGE_DIAMETER/2);
 
 function best_offset(vecs) =
     len(vecs) == 0 ? 0 :
@@ -90,43 +94,43 @@ function best_offset(vecs) =
     best;
 
 module tubular_vertex_holder(vecs, oset=0) {
-    cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
+    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
 
     // If no offset is specified, select a local offset
-    if (oset == 0) {
-        oset = offset_from_vecs(vecs);
-    }
+    oset = (oset == 0) ? offset_from_vecs(vecs): oset;
 
     difference() {
         for(v=vecs) {
-            lowest_top_point = lowest_point_top_surface_cylinder(oset+TUBE_DEPTH, EDGE_DIAMETER/2+WALL_THICKNESS, v);
             rotation = direction_to_euler(v);
-            base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
 
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
+                lowest_top_point = lowest_point_top_surface_cylinder(oset+TUBE_DEPTH, OUTER_TUBE_RADIUS, v);
+                base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
+                clamped_base_position = min(max(oset + TUBE_DEPTH - base_inset, 0), norm([lowest_top_point.x, lowest_top_point.y]));
+                tube_top_to_cutoff_plane = -OUTER_TUBE_RADIUS-lowest_top_point.z+cutoff+(oset+TUBE_DEPTH)*v.z;
                 hull() {
-                    // Move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
-                    translate(-base_inset * [v.x, v.y, 0])
-                    // Translate endpoint outwards by v
-                    translate((oset+TUBE_DEPTH) * v)
+                    // First, move endpoint to tube length.
+                    // Then move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
+                    // Clamp endpoint to 0, so as not to move in the opposite direction of v
+                    translate(clamped_base_position * [v.x, v.y, 0])
                     // Move endpoint downwards to cutoff plane
-                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff])
+                    translate([0, 0, tube_top_to_cutoff_plane])
                     rotate(rotation)
-                    cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
+                    cube([0.1, OUTER_TUBE_RADIUS, 0.1], center=true);
 
-                    translate([0, 0, -EDGE_DIAMETER/2-WALL_THICKNESS-lowest_top_point.z+cutoff+(oset+TUBE_DEPTH)*v.z])
+                    translate([0, 0, tube_top_to_cutoff_plane])
                     rotate(rotation)
-                    cube([0.1, EDGE_DIAMETER/2+WALL_THICKNESS, 0.1], center=true);
+                    cube([0.1, OUTER_TUBE_RADIUS, 0.1], center=true);
 
 
                     translate(oset * v)
                     rotate(rotation)
                     difference() {
                         union() {
-                            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH);
+                            cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
                             translate([0, 0, -oset])
-                            cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
+                            cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+oset);
                         }
                         translate([-50+(EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT)/2, 0, 0])
                         cube([100, 100, 100], center=true);
@@ -135,18 +139,18 @@ module tubular_vertex_holder(vecs, oset=0) {
             }
 
             // Tubes
-            translate(oset * v)
+            #translate(oset * v)
             rotate(rotation)
             union() {
                 difference() {
-                    cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=TUBE_DEPTH);
+                    cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
                     cylinder(
                         d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
                         d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
                         h=TUBE_DEPTH);
                 }
                 translate([0, 0, -oset])
-                cylinder(d=EDGE_DIAMETER+WALL_THICKNESS*2, h=WALL_THICKNESS+oset);
+                cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+oset);
             }
         }
 
@@ -157,7 +161,7 @@ module tubular_vertex_holder(vecs, oset=0) {
 }
 
 module conical_vertex_holder(vecs, oset=0) {
-    cutoff = cutoff_height(lowest_vector(vecs), oset, EDGE_DIAMETER/2+WALL_THICKNESS);
+    cutoff = cutoff_height(lowest_vector(vecs), oset, OUTER_TUBE_RADIUS);
 
     difference() {
         hull() {
@@ -167,7 +171,7 @@ module conical_vertex_holder(vecs, oset=0) {
                 rotate(rotation)
                 translate([0, 0, -oset])
                 linear_extrude(TUBE_DEPTH+oset)
-                circle(d=EDGE_DIAMETER+WALL_THICKNESS*2);
+                circle(r=OUTER_TUBE_RADIUS);
             }
         }
         for (v=vecs) {
