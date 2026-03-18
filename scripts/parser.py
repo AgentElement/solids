@@ -5,6 +5,7 @@ import argparse
 import os
 import glob
 import subprocess
+import copy
 
 import numpy as np
 import pymeshlab
@@ -158,7 +159,6 @@ class VertexFigure:
         edge_names: list[int],
         tag: int,
         options: GlobalOptions,
-        scale_factor: float = 1.0,
     ) -> None:
         self.vertex = vertex
         self.vecs = vecs
@@ -190,10 +190,13 @@ class VertexFigure:
         return n / norm if norm > 1e-10 else None
 
     def plane_normal(self) -> Optional[np.ndarray]:
-        if len(self.vecs) < 3:
+        vecs = copy.deepcopy(self.vecs)
+        if self.options.offset_type == OffsetType.PER_HALF_EDGE:
+            vecs *= self.half_edge_offset[:, np.newaxis] + self.options.rod_inset
+        if len(vecs) < 3:
             return None
-        center = np.mean(self.vecs, axis=0)
-        centered = self.vecs - center
+        center = np.mean(vecs, axis=0)
+        centered = vecs - center
         _, _, vh = np.linalg.svd(centered)
         normal = vh[2]
         return -normal / np.linalg.norm(normal)
