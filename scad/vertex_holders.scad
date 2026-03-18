@@ -55,18 +55,9 @@ function lowest_vector(vecs) =
     let(
         z_components = [for(v=vecs) v[2]],
         min_z = min(z_components),
-        min_idx = search(min_z, z_components)[0]
+        min_ix = search(min_z, z_components)[0]
     )
-    vecs[min_idx];
-
-// Return a pair of vectors with minimum angle between them
-function min_angle_pair(v, i=0, j=1, b=[-2]) =
-    i >= len(v)-1 ? [b[1], b[2]] :
-    let(
-        c = (v[i] * v[j]) / (norm(v[i]) * norm(v[j])),
-        nb = c > b[0] ? [c, v[i], v[j]] : b
-    )
-    j + 1 < len(v) ? min_angle_pair(v, i, j+1, nb) : min_angle_pair(v, i+1, i+2, nb);
+    min_ix;
 
 // Return the vector with minimum cosine distance to t; assume that t = vecs[0]
 function min_cos_dist(index, vecs) =
@@ -83,42 +74,47 @@ function offset_from_single_vec(index, vecs) =
     let ( closest = min_cos_dist(index, vecs) )
     axis_offset(vecs[index], closest, OUTER_TUBE_RADIUS, EDGE_DIAMETER/2);
 
-function offset_from_vecs(vecs) =
-    let (
-        pair = min_angle_pair(vecs),
-        v0 = pair[0],
-        v1 = pair[1]
-    )
-    axis_offset(v0, v1, OUTER_TUBE_RADIUS, EDGE_DIAMETER/2);
-
-function best_offset(vecs) =
-    len(vecs) == 0 ? 0 :
-    let (
-        offsets = [for(i=[0:len(vecs)-1])
-            offset_from_vecs(vecs[i])
-        ],
-        best = max(offsets)
-    )
-    best;
-
-
 module tubular_vertex_holder(vecs, offsets=[]) {
-    // If no offset is specified, select a vertex-specific offset
-    vertex_offset = len(offsets) == 0 ? offset_from_vecs(vecs): max(offsets);
-    cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);
+    offsets = len(offsets) == 0 ?
+        [for (i=[0:len(vecs)-1]) offset_from_single_vec(i, vecs)] :
+        offsets;
+
+    vertex_offset = max(offsets);
+
+    scaled_vecs = [for (i=[0:len(vecs)-1]) vecs[i] * (offsets[i] + TUBE_DEPTH)];
+    lowest_scaled_vec_ix = lowest_vector(scaled_vecs);
+
+    cutoff = cutoff_height(
+        vecs[lowest_scaled_vec_ix],
+        offsets[lowest_scaled_vec_ix],
+        OUTER_TUBE_RADIUS);
 
     difference() {
         for(i=[0:len(vecs)-1]) {
             v = vecs[i];
             rotation = direction_to_euler(v);
-            half_edge_offset = len(offsets) == 0 ? offset_from_single_vec(i, vecs) : offsets[i];
+            half_edge_offset = offsets[i];
 
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
-                lowest_top_point = lowest_line_on_cylinder(v, half_edge_offset+TUBE_DEPTH, OUTER_TUBE_RADIUS);
-                base_inset = abs(lowest_top_point.z - cutoff) / tan(MIN_PRINTER_OVERHANG_ANGLE);
-                clamped_base_position = min(max(half_edge_offset + TUBE_DEPTH - base_inset, 0), norm([lowest_top_point.x, lowest_top_point.y]));
-                tube_top_to_cutoff_plane = -OUTER_TUBE_RADIUS-lowest_top_point.z+cutoff+(half_edge_offset+TUBE_DEPTH)*v.z;
+                lowest_top_point = lowest_line_on_cylinder(
+                    v,
+                    half_edge_offset+TUBE_DEPTH,
+                    OUTER_TUBE_RADIUS);
+
+                base_inset =
+                    abs(lowest_top_point.z - cutoff) 
+                    / tan(MIN_PRINTER_OVERHANG_ANGLE);
+
+                clamped_base_position = min(
+                    max(half_edge_offset + TUBE_DEPTH - base_inset, 0),
+                    norm([lowest_top_point.x, lowest_top_point.y]));
+
+                tube_top_to_cutoff_plane =
+                    -OUTER_TUBE_RADIUS
+                    -lowest_top_point.z
+                    +cutoff
+                    +(half_edge_offset+TUBE_DEPTH)*v.z;
                 hull() {
                     // First, move endpoint to tube length.
                     // Then move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
@@ -161,7 +157,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
         for(i=[0:len(vecs)-1]) {
             v = vecs[i];
             rotation = direction_to_euler(v);
-            half_edge_offset = len(offsets) == 0 ? offset_from_single_vec(i, vecs) : offsets[i];
+            half_edge_offset = offsets[i];
             translate(half_edge_offset * v)
             rotate(rotation)
             // A tiny offset is added to the length of the internal cylinder
