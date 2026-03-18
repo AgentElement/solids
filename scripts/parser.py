@@ -132,6 +132,7 @@ class GlobalOptions:
         by_tag: bool = True,
         index: int = 0,
         colors: Optional[list[str]] = None,
+        label_vertices: bool = True,
     ) -> None:
         self.edge_diameter = edge_diameter
         self.diameter_tolerance_fit = diameter_tolerance_fit
@@ -147,6 +148,7 @@ class GlobalOptions:
         self.by_tag = by_tag
         self.index = index
         self.colors = colors if colors is not None else ["red", "green", "blue"]
+        self.label_vertices = label_vertices
 
         self.tube_depth = rod_inset + wall_thickness
         self.outer_tube_radius = edge_diameter / 2 + wall_thickness
@@ -606,6 +608,9 @@ class OpenscadArgs:
         args.append(f"-DINDEX={self.options.index}")
         colors_str = "[" + ",".join(f'"{c}"' for c in self.options.colors) + "]"
         args.append(f"-DCOLORS={colors_str}")
+        args.append(
+            f"-DLABEL_VERTICES={'true' if self.options.label_vertices else 'false'}"
+        )
         vertices_str = (
             "["
             + ",".join(
@@ -1173,6 +1178,11 @@ def main():
     parser.add_argument("--index")
     parser.add_argument("--colors", nargs="+", help="Color scheme for previews")
     parser.add_argument(
+        "--label-vertices",
+        action="store_true",
+        help="Label vertices in output",
+    )
+    parser.add_argument(
         "--isotropize",
         action="store_true",
         help="Enable isotropic remeshing",
@@ -1194,6 +1204,7 @@ def main():
         "by_tag": args.group_identical_vertices,
         "index": args.index,
         "colors": args.colors,
+        "label_vertices": args.label_vertices,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
     if "vertex_type" in options_dict:

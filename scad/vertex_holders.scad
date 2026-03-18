@@ -153,6 +153,20 @@ module tubular_vertex_holder(vecs, offsets=[]) {
                 cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
                 translate([0, 0, -half_edge_offset])
                 cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
+
+                if (LABEL_VERTICES) {
+                    rotate([0, 0, 180])
+                    intersection() {
+                        translate([0, 0, TUBE_DEPTH-WALL_THICKNESS])
+                        rotate([0, 90, 0])
+                        linear_extrude(20)
+                        text("test", valign="center", size = OUTER_TUBE_RADIUS * 1.5);
+                        difference() {
+                            cylinder(r=OUTER_TUBE_RADIUS+WALL_THICKNESS/2, h=RADIUS, center=true);
+                            cylinder(r=OUTER_TUBE_RADIUS, h=RADIUS, center=true);
+                        };
+                    }
+                }
             }
         }
 
