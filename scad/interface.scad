@@ -64,12 +64,33 @@ module solid() {
     }
 }
 
+module all_vertex_holders() {
+    norm_dist = RADIUS / max_dist(vertices);
+    for (i=[0:len(vertices)-1]) {
+        vertex = vertices[i];
+        vertex_figure = vertex_figures[i];
+        offset_array = offsets[i];
+        euler = eulers[i];
+        tag = tags[i];
+
+        translate(i * 100 * [1, 0, 0])
+        color(COLORS[tag % len(COLORS)])
+        if (VERTEX_TYPE == "tubular") {
+            tubular_vertex_holder(vertex_figure, offset_array);
+        } else if (VERTEX_TYPE == "conical") {
+            conical_vertex_holder(vertex_figure, offset_array);
+        }
+    }
+}
+
 module main() {
     if (OBJECT == "vertex_holder") {
-    index = BY_TAG ?
-        [for (i = [0:len(tags)-1]) if (tags[i] == INDEX) i][0] :
+        index = BY_TAG ?
+            [for (i = [0:len(tags)-1]) if (tags[i] == INDEX) i][0] :
         INDEX;
         vertex_holder(index, $fn=60);
+    } else if (OBJECT == "all_vertex_holders") {
+        all_vertex_holders();
     } else {
         solid();
     }

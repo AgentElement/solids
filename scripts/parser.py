@@ -50,6 +50,7 @@ class OffsetType(Enum):
 class ObjectType(Enum):
     VERTEX_HOLDER = "vertex_holder"
     SOLID = "solid"
+    ALL_VERTEX_HOLDERS = "all_vertex_holders"
 
 
 # A subset of openscad's tokens, plus tokens for David McCooey's visual
@@ -1160,7 +1161,9 @@ def main():
         "--global-offset",
     )
     parser.add_argument(
-        "--object-type", choices=["vertex_holder", "solid"], help="Object type"
+        "--object-type",
+        choices=["vertex_holder", "solid", "all_vertex_holders"],
+        help="Object type",
     )
     parser.add_argument(
         "--group-identical-vertices",
