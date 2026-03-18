@@ -543,15 +543,15 @@ class OpenscadArgs:
         self.options = options
         self.polyhedron = polyhedron
 
-        vertices, edges, vertex_figures, eulers, tags, offsets = (
-            self.polyhedron_options_array(polyhedron)
+        vertices, edges, vertex_figures, eulers, tags = self.polyhedron_options_array(
+            polyhedron
         )
         self.vertices = vertices
         self.edges = edges
         self.vertex_figures = vertex_figures
         self.eulers = eulers
         self.tags = tags
-        self.offsets = offsets
+        self.offsets = self.polyhedron_offset_array(polyhedron)
 
     def polyhedron_options_array(self, polyhedron: Polyhedron):
         vertices = polyhedron.vertices
@@ -559,14 +559,29 @@ class OpenscadArgs:
         vertex_figures = []
         eulers = []
         tags = []
-        offsets = []
 
         for vertex_figure in polyhedron.vertex_figures:
             vertex_figures.append(vertex_figure.std)
             eulers.append(vertex_figure.euler)
             tags.append(vertex_figure.tag)
 
-        return vertices, edges, vertex_figures, eulers, tags, offsets
+        return vertices, edges, vertex_figures, eulers, tags
+
+    def polyhedron_offset_array(self, polyhedron: Polyhedron) -> list[...]:
+        match self.options.offset_type:
+            case OffsetType.GLOBAL:
+                value = self.options.global_offset
+                return [[value] * len(vf.vecs) for vf in polyhedron.vertex_figures]
+            case OffsetType.PER_VERTEX:
+                return [
+                    [vf.vertex_offset] * len(vf.vecs)
+                    for vf in polyhedron.vertex_figures
+                ]
+            case OffsetType.PER_HALF_EDGE:
+                return [vf.half_edge_offset for vf in polyhedron.vertex_figures]
+            case OffsetType.PER_SOLID | _:
+                value = polyhedron.solid_offset
+                return [[value] * len(vf.vecs) for vf in polyhedron.vertex_figures]
 
     def to_openscad_args(self) -> list[str]:
         args = []
@@ -614,7 +629,16 @@ class OpenscadArgs:
         args.append(f"-Deulers={eulers_str}")
         tags_str = "[" + ",".join(str(t) for t in self.tags) + "]"
         args.append(f"-Dtags={tags_str}")
-        offsets_str = "[" + ",".join(str(o) for o in self.offsets) + "]"
+        offsets_str = (
+            "["
+            + ",".join(
+                "[" + ",".join(str(v) for v in o.tolist()) + "]"
+                if hasattr(o, "tolist")
+                else "[" + ",".join(str(v) for v in o) + "]"
+                for o in self.offsets
+            )
+            + "]"
+        )
         args.append(f"-Doffsets={offsets_str}")
         return args
 
