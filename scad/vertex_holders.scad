@@ -23,14 +23,6 @@ function direction_to_euler(v) =
         atan2(v[1], v[0])
     ];
 
-
-// Height to translate the vertex holder before making the xy cut
-function cutoff_height(v, l, r) =
-    v.z >= 0 ?
-        lowest_line_on_cylinder(v, l, r).z:
-        lowest_line_on_cylinder(v, l+TUBE_DEPTH, r).z;
-
-
 // Calculates the smallest translation length l such that the outer cylinders (radius R)
 // just touch the inner cylinders (radius r).
 function axis_offset(v0, v1, R, r) =
@@ -70,9 +62,24 @@ function min_cos_dist(index, vecs) =
     )
     vecs[ix+1];
 
+// Height to translate the vertex holder before making the xy cut
 function offset_from_single_vec(index, vecs) =
     let ( closest = min_cos_dist(index, vecs) )
     axis_offset(vecs[index], closest, OUTER_TUBE_RADIUS, EDGE_DIAMETER/2);
+
+// Concat two lists of vectors, but keep only their z-components
+function concat_z(l1, l2) = [for(l=[l1, l2], a=l) a.z];
+
+function cutoff_height(vecs, offsets) =
+    let (
+        lowest_bottom_points = [for (i=[0:len(vecs)-1])
+            lowest_line_on_cylinder(vecs[i], offsets[i], OUTER_TUBE_RADIUS)],
+        lowest_top_points = [for (i=[0:len(vecs)-1])
+            lowest_line_on_cylinder(vecs[i], offsets[i] + TUBE_DEPTH, OUTER_TUBE_RADIUS)],
+        z_components = concat_z(lowest_bottom_points, lowest_top_points),
+        lowest_point = min(z_components)
+    )
+    lowest_point;
 
 module tubular_vertex_holder(vecs, offsets=[]) {
     offsets = len(offsets) == 0 ?
@@ -81,13 +88,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
 
     vertex_offset = max(offsets);
 
-    scaled_vecs = [for (i=[0:len(vecs)-1]) vecs[i] * (offsets[i] + TUBE_DEPTH)];
-    lowest_scaled_vec_ix = lowest_vector(scaled_vecs);
-
-    cutoff = cutoff_height(
-        vecs[lowest_scaled_vec_ix],
-        offsets[lowest_scaled_vec_ix],
-        OUTER_TUBE_RADIUS);
+    cutoff = cutoff_height(vecs, offsets);
 
     difference() {
         for(i=[0:len(vecs)-1]) {
@@ -103,7 +104,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
                     OUTER_TUBE_RADIUS);
 
                 base_inset =
-                    abs(lowest_top_point.z - cutoff) 
+                    abs(lowest_top_point.z - cutoff)
                     / tan(MIN_PRINTER_OVERHANG_ANGLE);
 
                 clamped_base_position = min(
@@ -115,6 +116,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
                     -lowest_top_point.z
                     +cutoff
                     +(half_edge_offset+TUBE_DEPTH)*v.z;
+
                 hull() {
                     // First, move endpoint to tube length.
                     // Then move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
@@ -162,10 +164,15 @@ module tubular_vertex_holder(vecs, offsets=[]) {
             rotate(rotation)
             // A tiny offset is added to the length of the internal cylinder
             // to prevent z-fighting on the top surface
-            cylinder(
-                d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
-                d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
-                h=TUBE_DEPTH+0.01);
+            union() {
+                cylinder(
+                    d1=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT-DIAMETER_TAPER_DECREASE,
+                    d2=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
+                    h=TUBE_DEPTH);
+                cylinder(
+                    d=EDGE_DIAMETER+DIAMETER_TOLERANCE_FIT,
+                    h=RADIUS);
+            }
         }
 
         // Flat bottom plane
