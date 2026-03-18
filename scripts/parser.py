@@ -558,6 +558,7 @@ class OpenscadArgs:
         self.eulers = eulers
         self.tags = tags
         self.offsets = self.polyhedron_offset_array(polyhedron)
+        self.vertex_figure_edges = self.polyhedron_edge_array(polyhedron)
 
     def polyhedron_options_array(self, polyhedron: Polyhedron):
         vertices = polyhedron.vertices
@@ -588,6 +589,9 @@ class OpenscadArgs:
             case OffsetType.PER_SOLID | _:
                 value = polyhedron.solid_offset
                 return [[value] * len(vf.vecs) for vf in polyhedron.vertex_figures]
+
+    def polyhedron_edge_array(self, polyhedron: Polyhedron) -> list[list[int]]:
+        return [vf.edge_names for vf in polyhedron.vertex_figures]
 
     def to_openscad_args(self) -> list[str]:
         args = []
@@ -649,6 +653,10 @@ class OpenscadArgs:
             + "]"
         )
         args.append(f"-Doffsets={offsets_str}")
+        vertex_figure_edges_str = (
+            "[" + ",".join(f"[{','.join(str(e) for e in vf)}]" for vf in self.vertex_figure_edges) + "]"
+        )
+        args.append(f"-Dvertex_figure_edges={vertex_figure_edges_str}")
         return args
 
 

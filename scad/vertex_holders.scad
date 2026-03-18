@@ -81,7 +81,7 @@ function cutoff_height(vecs, offsets) =
     )
     lowest_point;
 
-module tubular_vertex_holder(vecs, offsets=[]) {
+module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
     offsets = len(offsets) == 0 ?
         [for (i=[0:len(vecs)-1]) offset_from_single_vec(i, vecs)] :
         offsets;
@@ -160,7 +160,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
                         translate([0, 0, TUBE_DEPTH-WALL_THICKNESS])
                         rotate([0, 90, 0])
                         linear_extrude(20)
-                        text("test", valign="center", size = OUTER_TUBE_RADIUS * 1.5);
+                        text(str(edge_list[i]), valign="center", size = OUTER_TUBE_RADIUS * 1.5);
                         difference() {
                             cylinder(r=OUTER_TUBE_RADIUS+WALL_THICKNESS/2, h=RADIUS, center=true);
                             cylinder(r=OUTER_TUBE_RADIUS, h=RADIUS, center=true);
@@ -195,7 +195,7 @@ module tubular_vertex_holder(vecs, offsets=[]) {
     }
 }
 
-module conical_vertex_holder(vecs, offsets=[]) {
+module conical_vertex_holder(vecs, offsets=[], edge_list=[]) {
     // If no offset is specified, select a local offset
     vertex_offset = (len(offsets) == 0) ? offset_from_vecs(vecs): max(offsets);
     cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);

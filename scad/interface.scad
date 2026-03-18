@@ -27,6 +27,7 @@ COLORS = ["red", "green", "blue"];
 vertices = [];
 edges = [];
 vertex_figures = [];
+vertex_figure_edges = [];
 eulers = [];
 tags = [];
 offsets = [];
@@ -35,11 +36,12 @@ offsets = [];
 module vertex_holder(index) {
     vertex_figure = vertex_figures[index];
     offset_array = offsets[index];
+    edge_list = vertex_figure_edges[index];
     color(COLORS[index % len(COLORS)])
     if (VERTEX_TYPE == "tubular") {
-        tubular_vertex_holder(vertex_figure, offset_array);
+        tubular_vertex_holder(vertex_figure, offset_array, edge_list);
     } else if (VERTEX_TYPE == "conical") {
-        conical_vertex_holder(vertex_figure, offset_array);
+        conical_vertex_holder(vertex_figure, offset_array, edge_list);
     }
 }
 
@@ -58,9 +60,9 @@ module solid() {
         rotate(euler * 180 / PI)
         color(COLORS[tag % len(COLORS)])
         if (VERTEX_TYPE == "tubular") {
-            tubular_vertex_holder(vertex_figure, offset_array);
+            tubular_vertex_holder(vertex_figure, offset_array, vertex_figure_edges[i]);
         } else if (VERTEX_TYPE == "conical") {
-            conical_vertex_holder(vertex_figure, offset_array);
+            conical_vertex_holder(vertex_figure, offset_array, vertex_figure_edges[i]);
         }
     }
 }
@@ -77,9 +79,9 @@ module all_vertex_holders() {
         translate(i * 100 * [1, 0, 0])
         color(COLORS[tag % len(COLORS)])
         if (VERTEX_TYPE == "tubular") {
-            tubular_vertex_holder(vertex_figure, offset_array);
+            tubular_vertex_holder(vertex_figure, offset_array, vertex_figure_edges[i]);
         } else if (VERTEX_TYPE == "conical") {
-            conical_vertex_holder(vertex_figure, offset_array);
+            conical_vertex_holder(vertex_figure, offset_array, vertex_figure_edges[i]);
         }
     }
 }
