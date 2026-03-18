@@ -96,9 +96,51 @@ class Token:
 # └───────────────────────────────────────────────────────────────────────────┘
 
 
+class GlobalOptions:
+    def __init__(
+        self,
+        edge_diameter: float = 3.0,
+        diameter_tolerance_fit: float = 0.35,
+        diameter_taper_fit: float = 0.10,
+        wall_thickness: float = 1.2,
+        radius: float = 200,
+        rod_inset: float = 8,
+        global_offset: float = 7.72,
+        min_printer_overhang_angle: float = 30,
+        vertex_type: str = "tubular",
+        offset_type: str = "per_solid",
+        object_type: str = "solid",
+        by_tag: bool = True,
+        index: int = 0,
+        colors: Optional[list[str]] = None,
+    ) -> None:
+        self.edge_diameter = edge_diameter
+        self.diameter_tolerance_fit = diameter_tolerance_fit
+        self.diameter_taper_fit = diameter_taper_fit
+        self.wall_thickness = wall_thickness
+        self.radius = radius
+        self.rod_inset = rod_inset
+        self.global_offset = global_offset
+        self.min_printer_overhang_angle = min_printer_overhang_angle
+        self.vertex_type = vertex_type
+        self.offset_type = offset_type
+        self.object_type = object_type
+        self.by_tag = by_tag
+        self.index = index
+        self.colors = colors if colors is not None else ["red", "green", "blue"]
+
+        self.tube_depth = rod_inset + wall_thickness
+        self.outer_tube_radius = edge_diameter / 2 + wall_thickness
+
+
 class VertexFigure:
     def __init__(
-        self, vertex: np.ndarray, vecs: np.ndarray, edge_names: list[int], tag
+        self,
+        vertex: np.ndarray,
+        vecs: np.ndarray,
+        edge_names: list[int],
+        tag: int,
+        options: GlobalOptions,
     ) -> None:
         self.vertex = vertex
         self.vecs = vecs
@@ -106,12 +148,11 @@ class VertexFigure:
 
         self.std = vecs
         self.euler = [0, 0, 0]
-
-        self.OUTER_TUBE_RADIUS = 0
-        self.EDGE_DIAMETER = 0
+        self.options = options
 
         self.half_edge_offset = self.compute_offsets()
         self.vertex_offset = self.largest_offset()
+
 
         plane_normal = self.plane_normal()
         normal = self.normal()
@@ -216,8 +257,10 @@ class VertexFigure:
     def axis_offset(self, v0: np.ndarray, v1: np.ndarray) -> float:
         c = np.dot(v0, v1)
         s = np.linalg.norm(np.cross(v0, v1))
-        l_side = (self.OUTER_TUBE_RADIUS * c + self.EDGE_DIAMETER / 2) / s
-        l_base = (self.EDGE_DIAMETER / 2 * (1 + c)) / s
+        l_side = (
+            self.options.outer_tube_radius * c + self.options.edge_diameter / 2
+        ) / s
+        l_base = (self.options.edge_diameter / 2 * (1 + c)) / s
         if s < 1e-9:
             return 1e9 if c > 0 else 0
         return max(l_side, l_base)
@@ -234,10 +277,11 @@ class VertexFigure:
 
 
 class Polyhedron:
-    def __init__(self, name, vertices, faces) -> None:
+    def __init__(self, name, vertices, faces, options: GlobalOptions) -> None:
         self.name = name
         self.faces = faces
         self.vertices: np.ndarray = vertices
+        self.options = options
 
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
@@ -317,7 +361,13 @@ class Polyhedron:
                 tag += 1
 
             vertex_figures.append(
-                VertexFigure(vertex, np.array(vecs), neighbors, tags[signature])
+                VertexFigure(
+                    vertex,
+                    np.array(vecs),
+                    neighbors,
+                    tags[signature],
+                    self.options,
+                )
             )
 
         return vertex_figures
@@ -353,6 +403,7 @@ class VisualPolyhedron(Polyhedron):
         constant_exacts,
         constant_floats,
         constant_sequence,
+        options: GlobalOptions,
     ) -> None:
         self.vertex_tokenstream = vertex_tokenstream
 
@@ -366,6 +417,8 @@ class VisualPolyhedron(Polyhedron):
         self.vertices: np.ndarray = self.evaluate_vertices()
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+
+        self.options = options
 
     def evaluate_vertices(self):
         vertices = {}
@@ -468,39 +521,10 @@ class VisualPolyhedron(Polyhedron):
         return "".join([x.literal() for x in tokenstream])
 
 
-class GlobalOptions:
-    def __init__(
-        self,
-        polyhedron: Polyhedron,
-        edge_diameter: float = 3.0,
-        diameter_tolerance_fit: float = 0.35,
-        diameter_taper_fit: float = 0.10,
-        wall_thickness: float = 1.2,
-        radius: float = 200,
-        rod_inset: float = 8,
-        global_offset: float = 7.72,
-        min_printer_overhang_angle: float = 30,
-        vertex_type: str = "tubular",
-        offset_type: str = "per_solid",
-        object_type: str = "solid",
-        by_tag: bool = True,
-        index: int = 0,
-        colors: Optional[list[str]] = None,
-    ) -> None:
-        self.edge_diameter = edge_diameter
-        self.diameter_tolerance_fit = diameter_tolerance_fit
-        self.diameter_taper_fit = diameter_taper_fit
-        self.wall_thickness = wall_thickness
-        self.radius = radius
-        self.rod_inset = rod_inset
-        self.global_offset = global_offset
-        self.min_printer_overhang_angle = min_printer_overhang_angle
-        self.vertex_type = vertex_type
-        self.offset_type = offset_type
-        self.object_type = object_type
-        self.by_tag = by_tag
-        self.index = index
-        self.colors = colors if colors is not None else ["red", "green", "blue"]
+class OpenscadArgs:
+    def __init__(self, polyhedron: Polyhedron, options: GlobalOptions):
+        self.options = options
+        self.polyhedron = polyhedron
 
         vertices, edges, vertex_figures, eulers, tags, offsets = (
             self.polyhedron_options_array(polyhedron)
@@ -529,20 +553,22 @@ class GlobalOptions:
 
     def to_openscad_args(self) -> list[str]:
         args = []
-        args.append(f"-DEDGE_DIAMETER={self.edge_diameter}")
-        args.append(f"-DDIAMETER_TOLERANCE_FIT={self.diameter_tolerance_fit}")
-        args.append(f"-DDIAMETER_TAPER_FIT={self.diameter_taper_fit}")
-        args.append(f"-DWALL_THICKNESS={self.wall_thickness}")
-        args.append(f"-DRADIUS={self.radius}")
-        args.append(f"-DROD_INSET={self.rod_inset}")
-        args.append(f"-DGLOBAL_OFFSET={self.global_offset}")
-        args.append(f"-DMIN_PRINTER_OVERHANG_ANGLE={self.min_printer_overhang_angle}")
-        args.append(f'-DVERTEX_TYPE="{self.vertex_type}"')
-        args.append(f'-DOFFSET_TYPE="{self.offset_type}"')
-        args.append(f'-DOBJECT="{self.object_type}"')
-        args.append(f"-DBY_TAG={'true' if self.by_tag else 'false'}")
-        args.append(f"-DINDEX={self.index}")
-        colors_str = "[" + ",".join(f'"{c}"' for c in self.colors) + "]"
+        args.append(f"-DEDGE_DIAMETER={self.options.edge_diameter}")
+        args.append(f"-DDIAMETER_TOLERANCE_FIT={self.options.diameter_tolerance_fit}")
+        args.append(f"-DDIAMETER_TAPER_FIT={self.options.diameter_taper_fit}")
+        args.append(f"-DWALL_THICKNESS={self.options.wall_thickness}")
+        args.append(f"-DRADIUS={self.options.radius}")
+        args.append(f"-DROD_INSET={self.options.rod_inset}")
+        args.append(f"-DGLOBAL_OFFSET={self.options.global_offset}")
+        args.append(
+            f"-DMIN_PRINTER_OVERHANG_ANGLE={self.options.min_printer_overhang_angle}"
+        )
+        args.append(f'-DVERTEX_TYPE="{self.options.vertex_type}"')
+        args.append(f'-DOFFSET_TYPE="{self.options.offset_type}"')
+        args.append(f'-DOBJECT="{self.options.object_type}"')
+        args.append(f"-DBY_TAG={'true' if self.options.by_tag else 'false'}")
+        args.append(f"-DINDEX={self.options.index}")
+        colors_str = "[" + ",".join(f'"{c}"' for c in self.options.colors) + "]"
         args.append(f"-DCOLORS={colors_str}")
         vertices_str = (
             "["
@@ -586,11 +612,14 @@ class StlParser:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
 
-    def parse(self) -> Polyhedron:
+    def parse(self, options: GlobalOptions) -> Polyhedron:
         vertices_arr, indices = stl_reader.read(self.filepath)
 
         return Polyhedron(
-            name="stl_model", vertices=vertices_arr, faces=indices.tolist()
+            name="stl_model",
+            vertices=vertices_arr,
+            faces=indices.tolist(),
+            options=options,
         )
 
 
@@ -991,7 +1020,7 @@ class VisualPolyhedraParser:
             self.face_def()
 
     # polyhedron := name_def constant_block vertex_block face_block EOF
-    def polyhedron(self) -> Polyhedron:
+    def parse(self, options: GlobalOptions) -> Polyhedron:
         self.name_def()
         self.constant_block(ConstantRegion.DEF)
         self.where_block()
@@ -1012,6 +1041,7 @@ class VisualPolyhedraParser:
             self.constant_exacts,
             self.constant_floats,
             self.constant_sequence,
+            options=options,
         )
 
     def dump_tokenstream(self):
@@ -1034,7 +1064,8 @@ def get_parser(filepath: str):
 
 
 def call_openscad(polyhedron: Polyhedron, options: GlobalOptions):
-    command = ["openscad"] + options.to_openscad_args() + ["scad/interface.scad"]
+    openscad_args = OpenscadArgs(polyhedron, options)
+    command = ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
     print(command)
     subprocess.run(command)
 
@@ -1101,41 +1132,34 @@ def main():
     )
 
     args = parser.parse_args()
+    options_dict = {
+        "edge_diameter": args.edge_diameter,
+        "diameter_tolerance_fit": args.diameter_tolerance_fit,
+        "diameter_taper_fit": args.diameter_taper_fit,
+        "wall_thickness": args.wall_thickness,
+        "radius": args.radius,
+        "rod_inset": args.rod_inset,
+        "global_offset": args.global_offset,
+        "min_printer_overhang_angle": args.min_printer_overhang_angle,
+        "vertex_type": args.vertex_type,
+        "offset_type": args.offset_type,
+        "object_type": args.object_type,
+        "by_tag": args.group_identical_vertices,
+        "index": args.index,
+        "colors": args.colors,
+    }
+    options_dict = {k: v for k, v in options_dict.items() if v is not None}
+    options = GlobalOptions(**options_dict)
 
     if args.file:
         p = get_parser(args.file)
-        if isinstance(p, StlParser):
-            polyhedron = p.parse()
-        else:
-            polyhedron = p.polyhedron()
-        if args.isotropize:
-            polyhedron.isotropize()
-        options_dict = {
-            "edge_diameter": args.edge_diameter,
-            "diameter_tolerance_fit": args.diameter_tolerance_fit,
-            "diameter_taper_fit": args.diameter_taper_fit,
-            "wall_thickness": args.wall_thickness,
-            "radius": args.radius,
-            "rod_inset": args.rod_inset,
-            "global_offset": args.global_offset,
-            "min_printer_overhang_angle": args.min_printer_overhang_angle,
-            "vertex_type": args.vertex_type,
-            "offset_type": args.offset_type,
-            "object_type": args.object_type,
-            "by_tag": args.group_identical_vertices,
-            "index": args.index,
-            "colors": args.colors,
-        }
-        options_dict = {k: v for k, v in options_dict.items() if v is not None}
-        options = GlobalOptions(polyhedron, **options_dict)
+        polyhedron = p.parse(options)
+        polyhedron.isotropize()
         call_openscad(polyhedron, options)
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
             p = get_parser(filepath)
-            if isinstance(p, StlParser):
-                polyhedron = p.parse()
-            else:
-                polyhedron = p.polyhedron()
+            polyhedron = p.parse(options)
             if args.isotropize:
                 polyhedron.isotropize()
                 print(polyhedron.openscad())
