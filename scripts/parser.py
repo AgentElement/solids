@@ -34,6 +34,23 @@ class TokenType(Enum):
     SEMI = 20
 
 
+class VertexType(Enum):
+    TUBULAR = "tubular"
+    CONICAL = "conical"
+
+
+class OffsetType(Enum):
+    PER_SOLID = "per_solid"
+    GLOBAL = "global"
+    PER_VERTEX = "per_vertex"
+    PER_HALF_EDGE = "per_half_edge"
+
+
+class ObjectType(Enum):
+    VERTEX_HOLDER = "vertex_holder"
+    SOLID = "solid"
+
+
 # A subset of openscad's tokens, plus tokens for David McCooey's visual
 # polyhedra files
 class Token:
@@ -107,9 +124,9 @@ class GlobalOptions:
         rod_inset: float = 8,
         global_offset: float = 7.72,
         min_printer_overhang_angle: float = 30,
-        vertex_type: str = "tubular",
-        offset_type: str = "per_solid",
-        object_type: str = "solid",
+        vertex_type: VertexType = VertexType.TUBULAR,
+        offset_type: OffsetType = OffsetType.PER_SOLID,
+        object_type: ObjectType = ObjectType.SOLID,
         by_tag: bool = True,
         index: int = 0,
         colors: Optional[list[str]] = None,
@@ -141,6 +158,7 @@ class VertexFigure:
         edge_names: list[int],
         tag: int,
         options: GlobalOptions,
+        scale_factor: float = 1.0,
     ) -> None:
         self.vertex = vertex
         self.vecs = vecs
@@ -152,7 +170,6 @@ class VertexFigure:
 
         self.half_edge_offset = self.compute_offsets()
         self.vertex_offset = self.largest_offset()
-
 
         plane_normal = self.plane_normal()
         normal = self.normal()
@@ -563,9 +580,9 @@ class OpenscadArgs:
         args.append(
             f"-DMIN_PRINTER_OVERHANG_ANGLE={self.options.min_printer_overhang_angle}"
         )
-        args.append(f'-DVERTEX_TYPE="{self.options.vertex_type}"')
-        args.append(f'-DOFFSET_TYPE="{self.options.offset_type}"')
-        args.append(f'-DOBJECT="{self.options.object_type}"')
+        args.append(f'-DVERTEX_TYPE="{self.options.vertex_type.value}"')
+        args.append(f'-DOFFSET_TYPE="{self.options.offset_type.value}"')
+        args.append(f'-DOBJECT="{self.options.object_type.value}"')
         args.append(f"-DBY_TAG={'true' if self.options.by_tag else 'false'}")
         args.append(f"-DINDEX={self.options.index}")
         colors_str = "[" + ",".join(f'"{c}"' for c in self.options.colors) + "]"
@@ -1149,6 +1166,12 @@ def main():
         "colors": args.colors,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
+    if "vertex_type" in options_dict:
+        options_dict["vertex_type"] = VertexType(options_dict["vertex_type"])
+    if "offset_type" in options_dict:
+        options_dict["offset_type"] = OffsetType(options_dict["offset_type"])
+    if "object_type" in options_dict:
+        options_dict["object_type"] = ObjectType(options_dict["object_type"])
     options = GlobalOptions(**options_dict)
 
     if args.file:
