@@ -101,16 +101,17 @@ function best_offset(vecs) =
     )
     best;
 
-module tubular_vertex_holder(vecs, oset=0) {
+
+module tubular_vertex_holder(vecs, offsets=[]) {
     // If no offset is specified, select a vertex-specific offset
-    vertex_offset = (oset <= 0) ? offset_from_vecs(vecs): oset;
+    vertex_offset = len(offsets) == 0 ? offset_from_vecs(vecs): max(offsets);
     cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);
 
     difference() {
         for(i=[0:len(vecs)-1]) {
             v = vecs[i];
             rotation = direction_to_euler(v);
-            half_edge_offset = (oset == -1) ? offset_from_single_vec(i, vecs) : vertex_offset;
+            half_edge_offset = len(offsets) == 0 ? offset_from_single_vec(i, vecs) : offsets[i];
 
             // Add support structure if v sits below the minimum overhang angle
             if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
@@ -160,7 +161,7 @@ module tubular_vertex_holder(vecs, oset=0) {
         for(i=[0:len(vecs)-1]) {
             v = vecs[i];
             rotation = direction_to_euler(v);
-            half_edge_offset = (oset == -1) ? offset_from_single_vec(i, vecs) : vertex_offset;
+            half_edge_offset = len(offsets) == 0 ? offset_from_single_vec(i, vecs) : offsets[i];
             translate(half_edge_offset * v)
             rotate(rotation)
             // A tiny offset is added to the length of the internal cylinder
@@ -177,9 +178,9 @@ module tubular_vertex_holder(vecs, oset=0) {
     }
 }
 
-module conical_vertex_holder(vecs, oset=0) {
+module conical_vertex_holder(vecs, offsets=[]) {
     // If no offset is specified, select a local offset
-    vertex_offset = (vertex_offset == 0) ? offset_from_vecs(vecs): vertex_offset;
+    vertex_offset = (len(offsets) == 0) ? offset_from_vecs(vecs): max(offsets);
     cutoff = cutoff_height(lowest_vector(vecs), vertex_offset, OUTER_TUBE_RADIUS);
 
     difference() {
@@ -267,9 +268,9 @@ module one_vertex_holder(vertices, edges, tag, type="tubular", oset="best") {
 
         color(colors[tag])
         if (type == "tubular") {
-            tubular_vertex_holder(std, oset=holder_offset);
+            tubular_vertex_holder(std);
         } else if (type == "conical") {
-            conical_vertex_holder(std, oset=holder_offset);
+            conical_vertex_holder(std);
         }
     }
 }
