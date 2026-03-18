@@ -107,6 +107,12 @@ class VertexFigure:
         self.std = vecs
         self.euler = [0, 0, 0]
 
+        self.OUTER_TUBE_RADIUS = 0
+        self.EDGE_DIAMETER = 0
+
+        self.half_edge_offset = self.compute_offsets()
+        self.vertex_offset = self.largest_offset()
+
         plane_normal = self.plane_normal()
         normal = self.normal()
         if normal is not None and plane_normal is not None:
@@ -196,6 +202,36 @@ class VertexFigure:
         rotated = np.array([R @ v for v in self.vecs])
         return (rotated, euler)
 
+    def min_cos_dist(self, index: int) -> np.ndarray:
+        scores = [
+            -1000
+            if i == index
+            else (self.vecs[index] @ self.vecs[i]) / np.linalg.norm(self.vecs[i])
+            for i in range(1, len(self.vecs))
+        ]
+        max_score = max(scores)
+        max_idx = scores.index(max_score)
+        return self.vecs[max_idx + 1]
+
+    def axis_offset(self, v0: np.ndarray, v1: np.ndarray) -> float:
+        c = np.dot(v0, v1)
+        s = np.linalg.norm(np.cross(v0, v1))
+        l_side = (self.OUTER_TUBE_RADIUS * c + self.EDGE_DIAMETER / 2) / s
+        l_base = (self.EDGE_DIAMETER / 2 * (1 + c)) / s
+        if s < 1e-9:
+            return 1e9 if c > 0 else 0
+        return max(l_side, l_base)
+
+    def offset_from_single_vec(self, index: int) -> float:
+        closest = self.min_cos_dist(index)
+        return self.axis_offset(self.vecs[index], closest)
+
+    def compute_offsets(self):
+        return np.array([self.offset_from_single_vec(i) for i in range(len(self.vecs))])
+
+    def largest_offset(self):
+        return max(self.half_edge_offset)
+
 
 class Polyhedron:
     def __init__(self, name, vertices, faces) -> None:
@@ -205,9 +241,16 @@ class Polyhedron:
 
         self.edges: dict[list[int], list[...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+        self.solid_offset = self.largest_offset()
 
     def average_edge_length(self) -> float:
         return np.sum([length for _, length in self.edges.values()]) / len(self.edges)
+
+    def largest_offset(self) -> float:
+        if len(self.vertex_figures) == 0:
+            return 0
+        offsets = [vf.vertex_offset for vf in self.vertex_figures]
+        return max(offsets)
 
     # Convert facelist into edgelist
     def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
