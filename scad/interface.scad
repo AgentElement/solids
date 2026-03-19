@@ -69,7 +69,6 @@ module solid() {
 }
 
 module all_vertex_holders() {
-    norm_dist = RADIUS / max_dist(vertices);
     for (i=[0:len(vertices)-1]) {
         vertex = vertices[i];
         vertex_figure = vertex_figures[i];

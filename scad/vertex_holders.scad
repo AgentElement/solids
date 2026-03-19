@@ -154,6 +154,7 @@ module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
                 translate([0, 0, -half_edge_offset])
                 cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
 
+                // Add text to tube holders
                 if (LABEL_VERTICES) {
                     rotate([0, 0, 180])
                     intersection() {
