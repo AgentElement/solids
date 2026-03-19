@@ -133,6 +133,7 @@ class GlobalOptions:
         index: int = 0,
         colors: Optional[list[str]] = None,
         label_vertices: bool = True,
+        tubular_supports: bool = True,
     ) -> None:
         self.edge_diameter = edge_diameter
         self.diameter_tolerance_fit = diameter_tolerance_fit
@@ -149,6 +150,7 @@ class GlobalOptions:
         self.index = index
         self.colors = colors if colors is not None else ["red", "green", "blue"]
         self.label_vertices = label_vertices
+        self.tubular_supports = tubular_supports
 
         self.tube_depth = rod_inset + wall_thickness
         self.outer_tube_radius = edge_diameter / 2 + wall_thickness
@@ -659,6 +661,9 @@ class OpenscadArgs:
         args.append(f"-DCOLORS={colors_str}")
         args.append(
             f"-DLABEL_VERTICES={'true' if self.options.label_vertices else 'false'}"
+        )
+        args.append(
+            f"-DTUBULAR_SUPPORTS={'true' if self.options.tubular_supports else 'false'}"
         )
         vertices_str = (
             "["
@@ -1240,6 +1245,11 @@ def main():
         help="Label vertices in output",
     )
     parser.add_argument(
+        "--tubular-supports",
+        action="store_true",
+        help="Enable tubular supports",
+    )
+    parser.add_argument(
         "--isotropize",
         action="store_true",
         help="Enable isotropic remeshing",
@@ -1262,6 +1272,7 @@ def main():
         "index": args.index,
         "colors": args.colors,
         "label_vertices": args.label_vertices,
+        "tubular_supports": args.tubular_supports,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
     if "vertex_type" in options_dict:

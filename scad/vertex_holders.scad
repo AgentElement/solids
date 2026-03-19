@@ -97,7 +97,7 @@ module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
             half_edge_offset = offsets[i];
 
             // Add support structure if v sits below the minimum overhang angle
-            if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE) {
+            if (rotation[1] > MIN_PRINTER_OVERHANG_ANGLE && TUBULAR_SUPPORTS) {
                 lowest_top_point = lowest_line_on_cylinder(
                     v,
                     half_edge_offset+TUBE_DEPTH,
