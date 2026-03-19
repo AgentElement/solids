@@ -359,12 +359,14 @@ class Polyhedron:
 
     def compute_edge_lengths(self):
         edge_lengths = []
+        max_dist = max([np.linalg.norm(v) for v in self.vertices])
         for v1, v2 in self.edges:
             v1_offset, v2_offset = self.offset_for_edge(v1, v2)
             v1_arr = self.vertices[v1]
             v2_arr = self.vertices[v2]
             length = np.linalg.norm(v2_arr - v1_arr)
-            offset_length = length - v1_offset - v2_offset
+            scale_factor = self.options.radius / max_dist
+            offset_length = scale_factor * length - v1_offset - v2_offset
             edge_lengths.append(((v1, v2), length, offset_length))
 
         sorted_edges = sorted(edge_lengths, key=lambda x: x[2])
