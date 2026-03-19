@@ -158,14 +158,16 @@ class VertexFigure:
     def __init__(
         self,
         vertex: np.ndarray,
+        vertex_index: int,
         vecs: np.ndarray,
-        edge_names: list[int],
+        neighbors: list[int],
         tag: int,
         options: GlobalOptions,
     ) -> None:
         self.vertex = vertex
+        self.vertex_index = vertex_index
         self.vecs = vecs
-        self.edge_names = edge_names
+        self.neighbors = neighbors
 
         self.std = vecs
         self.euler = [0, 0, 0]
@@ -183,6 +185,16 @@ class VertexFigure:
             self.euler = euler
 
         self.tag = tag
+
+    def annotate_edge_names(self, edges: dict[tuple[int, int], dict[str, ...]]):
+        self.edges = []
+        for neighbor in self.neighbors:
+            edge = (
+                (self.vertex_index, neighbor)
+                if self.vertex_index < neighbor
+                else (neighbor, self.vertex_index)
+            )
+            self.edges.append(edges[edge]["name"])
 
     def normalizable(self) -> bool:
         return self.normal() is not None
@@ -306,12 +318,15 @@ class Polyhedron:
         self.vertices: np.ndarray = vertices
         self.options = options
 
-        self.edges: dict[list[int], list[...]] = self.make_edgelist()
+        self.edges: dict[tuple[int, int], dict[str, ...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+        self.compute_edge_lengths()
+        for vf in self.vertex_figures:
+            vf.annotate_edge_names(self.edges)
         self.solid_offset = self.largest_offset()
 
     def average_edge_length(self) -> float:
-        return np.sum([length for _, length in self.edges.values()]) / len(self.edges)
+        return np.sum([e["length"] for e in self.edges.values()]) / len(self.edges)
 
     def largest_offset(self) -> float:
         if len(self.vertex_figures) == 0:
@@ -319,8 +334,47 @@ class Polyhedron:
         offsets = [vf.vertex_offset for vf in self.vertex_figures]
         return max(offsets)
 
+    def offset_for_edge(self, v1, v2):
+        vf1 = self.vertex_figures[v1]
+        vf2 = self.vertex_figures[v2]
+        match self.options.offset_type:
+            case OffsetType.GLOBAL:
+                return (self.options.global_offset, self.options.global_offset)
+            case OffsetType.PER_VERTEX:
+                return (
+                    vf1.vertex_offset,
+                    vf2.vertex_offset,
+                )
+            case OffsetType.PER_HALF_EDGE:
+                v1_neighbor = next(ix for ix, n in enumerate(vf1.neighbors) if n == v2)
+                v2_neighbor = next(ix for ix, n in enumerate(vf2.neighbors) if n == v1)
+                return (
+                    vf1.half_edge_offset[v1_neighbor],
+                    vf2.half_edge_offset[v2_neighbor],
+                )
+            case OffsetType.PER_SOLID | _:
+                return (self.solid_offset, self.solid_offset)
+
+    def compute_edge_lengths(self):
+        edge_lengths = []
+        for v1, v2 in self.edges:
+            v1_offset, v2_offset = self.offset_for_edge(v1, v2)
+            v1_arr = self.vertices[v1]
+            v2_arr = self.vertices[v2]
+            length = np.linalg.norm(v2_arr - v1_arr)
+            offset_length = length - v1_offset - v2_offset
+            edge_lengths.append(((v1, v2), length, offset_length))
+
+        sorted_edges = sorted(edge_lengths, key=lambda x: x[2])
+        for i, (edge, length, offset_length) in enumerate(sorted_edges):
+            self.edges[edge] = {
+                "length": length,
+                "offset_length": offset_length,
+                "name": i,
+            }
+
     # Convert facelist into edgelist
-    def make_edgelist(self) -> dict[tuple[int, int], tuple[int, float]]:
+    def make_edgelist(self) -> dict[tuple[int, int], list[...]]:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
@@ -328,19 +382,7 @@ class Polyhedron:
                 v2_int = int(v2)
                 if v1_int < len(self.vertices) and v2_int < len(self.vertices):
                     edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
-
-        edge_lengths = []
-        for v1, v2 in edges:
-            v1_arr = self.vertices[v1]
-            v2_arr = self.vertices[v2]
-            length = np.linalg.norm(v2_arr - v1_arr)
-            edge_lengths.append((length, v1, v2))
-
-        edge_lengths.sort(key=lambda x: x[0])
-        return {
-            (v1, v2): (name, length)
-            for name, [length, v1, v2] in enumerate(edge_lengths)
-        }
+        return {e: [] for e in edges}
 
     def vertex_figure_signature(self, vecs) -> tuple[int, ...]:
         precision = 100000
@@ -386,6 +428,7 @@ class Polyhedron:
             vertex_figures.append(
                 VertexFigure(
                     vertex,
+                    i,
                     np.array(vecs),
                     neighbors,
                     tags[signature],
@@ -413,8 +456,11 @@ class Polyhedron:
         mesh = ms.current_mesh()
         self.vertices = mesh.vertex_matrix()
         self.faces = mesh.face_matrix().tolist()
-        self.edges: dict[list[int], list[...]] = self.make_edgelist()
+        self.edges: dict[tuple[int, int], dict[str, ...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+        self.compute_edge_lengths()
+        for vf in self.vertex_figures:
+            vf.annotate_edge_names(self.edges)
 
 
 class VisualPolyhedron(Polyhedron):
@@ -549,16 +595,16 @@ class OpenscadArgs:
         self.options = options
         self.polyhedron = polyhedron
 
-        vertices, edges, vertex_figures, eulers, tags = self.polyhedron_options_array(
-            polyhedron
+        vertices, edges, vertex_figures, eulers, tags, vertex_figure_edges = (
+            self.polyhedron_options_array(polyhedron)
         )
         self.vertices = vertices
         self.edges = edges
         self.vertex_figures = vertex_figures
         self.eulers = eulers
         self.tags = tags
+        self.vertex_figure_edges = vertex_figure_edges
         self.offsets = self.polyhedron_offset_array(polyhedron)
-        self.vertex_figure_edges = self.polyhedron_edge_array(polyhedron)
 
     def polyhedron_options_array(self, polyhedron: Polyhedron):
         vertices = polyhedron.vertices
@@ -566,13 +612,15 @@ class OpenscadArgs:
         vertex_figures = []
         eulers = []
         tags = []
+        vertex_figure_edges = []
 
         for vertex_figure in polyhedron.vertex_figures:
             vertex_figures.append(vertex_figure.std)
             eulers.append(vertex_figure.euler)
             tags.append(vertex_figure.tag)
+            vertex_figure_edges.append(vertex_figure.edges)
 
-        return vertices, edges, vertex_figures, eulers, tags
+        return vertices, edges, vertex_figures, eulers, tags, vertex_figure_edges
 
     def polyhedron_offset_array(self, polyhedron: Polyhedron) -> list[...]:
         match self.options.offset_type:
@@ -589,9 +637,6 @@ class OpenscadArgs:
             case OffsetType.PER_SOLID | _:
                 value = polyhedron.solid_offset
                 return [[value] * len(vf.vecs) for vf in polyhedron.vertex_figures]
-
-    def polyhedron_edge_array(self, polyhedron: Polyhedron) -> list[list[int]]:
-        return [vf.edge_names for vf in polyhedron.vertex_figures]
 
     def to_openscad_args(self) -> list[str]:
         args = []
@@ -654,7 +699,11 @@ class OpenscadArgs:
         )
         args.append(f"-Doffsets={offsets_str}")
         vertex_figure_edges_str = (
-            "[" + ",".join(f"[{','.join(str(e) for e in vf)}]" for vf in self.vertex_figure_edges) + "]"
+            "["
+            + ",".join(
+                f"[{','.join(str(e) for e in vf)}]" for vf in self.vertex_figure_edges
+            )
+            + "]"
         )
         args.append(f"-Dvertex_figure_edges={vertex_figure_edges_str}")
         return args
