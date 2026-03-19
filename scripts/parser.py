@@ -322,10 +322,10 @@ class Polyhedron:
 
         self.edges: dict[tuple[int, int], dict[str, ...]] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
+        self.solid_offset = self.largest_offset()
         self.compute_edge_lengths()
         for vf in self.vertex_figures:
             vf.annotate_edge_names(self.edges)
-        self.solid_offset = self.largest_offset()
 
     def average_edge_length(self) -> float:
         return np.sum([e["length"] for e in self.edges.values()]) / len(self.edges)
@@ -458,13 +458,13 @@ class Polyhedron:
         )
 
         mesh = ms.current_mesh()
-        self.vertices = mesh.vertex_matrix()
-        self.faces = mesh.face_matrix().tolist()
-        self.edges: dict[tuple[int, int], dict[str, ...]] = self.make_edgelist()
-        self.vertex_figures = self.annotate_vertex_figures()
-        self.compute_edge_lengths()
-        for vf in self.vertex_figures:
-            vf.annotate_edge_names(self.edges)
+
+        self.__init__(
+            vertices=mesh.vertex_matrix(),
+            faces=mesh.face_matrix().tolist(),
+            name=self.name,
+            options=self.options,
+        )
 
 
 class VisualPolyhedron(Polyhedron):
@@ -487,11 +487,9 @@ class VisualPolyhedron(Polyhedron):
         self.constant_floats = constant_floats
         self.constant_sequence = constant_sequence
 
-        self.vertices: np.ndarray = self.evaluate_vertices()
-        self.edges: dict[list[int], list[...]] = self.make_edgelist()
-        self.vertex_figures = self.annotate_vertex_figures()
+        vertices: np.ndarray = self.evaluate_vertices()
 
-        self.options = options
+        super().__init__(name, vertices, faces, options)
 
     def evaluate_vertices(self):
         vertices = {}
