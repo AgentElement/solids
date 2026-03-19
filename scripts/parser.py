@@ -451,9 +451,9 @@ class Polyhedron:
 
         ms.apply_filter(
             "meshing_isotropic_explicit_remeshing",
-            iterations=5,
+            iterations=8,
             targetlen=pymeshlab.PureValue(average_edge_length),
-            featuredeg=10,
+            featuredeg=15,
             adaptive=False,
         )
 
