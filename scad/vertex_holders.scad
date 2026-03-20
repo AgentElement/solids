@@ -161,7 +161,7 @@ module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
                         translate([0, 0, TUBE_DEPTH-WALL_THICKNESS])
                         rotate([0, 90, 0])
                         linear_extrude(20)
-                        text(str(edge_list[i]), valign="center", size = OUTER_TUBE_RADIUS * 1.5);
+                        text(str(edge_list[i]), valign="center", size = OUTER_TUBE_RADIUS);
                         difference() {
                             cylinder(r=OUTER_TUBE_RADIUS+WALL_THICKNESS/2, h=RADIUS, center=true);
                             cylinder(r=OUTER_TUBE_RADIUS, h=RADIUS, center=true);
