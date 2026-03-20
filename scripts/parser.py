@@ -336,6 +336,11 @@ class Polyhedron:
         offsets = [vf.vertex_offset for vf in self.vertex_figures]
         return max(offsets)
 
+    def print_offset_edge_lengths(self):
+        sorted_edges = sorted(self.edges.items(), key=lambda x: x[1]["offset_length"])
+        for edge, data in sorted_edges:
+            print(f"({data['name']}, {data['offset_length']:.6f})")
+
     def offset_for_edge(self, v1, v2):
         vf1 = self.vertex_figures[v1]
         vf2 = self.vertex_figures[v2]
@@ -1179,6 +1184,7 @@ def call_openscad(polyhedron: Polyhedron, options: GlobalOptions):
     openscad_args = OpenscadArgs(polyhedron, options)
     command = ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
     print(command)
+    polyhedron.print_offset_edge_lengths()
     subprocess.run(command)
 
 
