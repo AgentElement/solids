@@ -3,7 +3,6 @@ from typing import Optional
 
 import argparse
 import os
-import glob
 import subprocess
 import copy
 from concurrent.futures import ProcessPoolExecutor
@@ -113,11 +112,6 @@ class Token:
         return f"{self.pos} {self.ttype} {self.lexeme}"
 
 
-# ┌───────────────────────────────────────────────────────────────────────────┐
-# │ Geometry                                                                  │
-# └───────────────────────────────────────────────────────────────────────────┘
-
-
 class GlobalOptions:
     def __init__(
         self,
@@ -157,6 +151,11 @@ class GlobalOptions:
 
         self.tube_depth = rod_inset + wall_thickness
         self.outer_tube_radius = edge_diameter / 2 + wall_thickness
+
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │ Geometry                                                                  │
+# └───────────────────────────────────────────────────────────────────────────┘
 
 
 class VertexFigure:
@@ -727,7 +726,7 @@ class OpenscadArgs:
 # └───────────────────────────────────────────────────────────────────────────┘
 
 
-# Parse STL files into Polyhedron objects using stl-reader library
+# Parse STL files into Polyhedron objects
 class StlParser:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
@@ -1228,8 +1227,7 @@ def call_openscad(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--directory", help="Directory containing polyhedron files")
-    parser.add_argument("--file", "-f", help="Specific file to process")
+    parser.add_argument("--file", "-f", required=True, help="Specific file to process")
     parser.add_argument(
         "--output-dir", default="out/", help="Output directory for generated files"
     )
@@ -1275,31 +1273,34 @@ def main():
     parser.add_argument(
         "--offset-type",
         choices=["per_solid", "global", "per_vertex", "per_half_edge"],
-        help="Offset type. Best computes an identical offset for each vertex in your solid. "
-        "Local computes a unique offset for each vertex. Global sets all offsets to the value of "
-        "--global-offset",
+        help="Offset type. per_solid computes an identical offset for each vertex in your solid. "
+        "per_vertex computes a unique offset for each vertex. "
+        "per_half_edge computes a unique offset for each (vertex, edge) pair. "
+        "Global sets all offsets to the value of --global-offset",
     )
     parser.add_argument(
         "--object-type",
         choices=["vertex_holder", "solid", "all_vertex_holders"],
-        help="Object type",
+        help="Preview either a single vertex holder (selected with --index), "
+        "an entire solid, or all vertex holders at once",
     )
+    parser.add_argument("--index", help="Preview vertex with this index")
+    parser.add_argument("--colors", nargs="+", help="Color scheme for previews")
+
     parser.add_argument(
         "--group-identical-vertices",
         action="store_true",
         help="Group vertices that are equivalent under rotations",
     )
-    parser.add_argument("--index")
-    parser.add_argument("--colors", nargs="+", help="Color scheme for previews")
     parser.add_argument(
         "--label-vertices",
         action="store_true",
         help="Label vertices in output",
     )
     parser.add_argument(
-        "--tubular-supports",
-        action="store_true",
-        help="Enable tubular supports",
+        "--no-tubular-supports",
+        action="store_false",
+        help="Disable supports for tubular vertices",
     )
     parser.add_argument(
         "--isotropize",
@@ -1335,18 +1336,10 @@ def main():
         options_dict["object_type"] = ObjectType(options_dict["object_type"])
     options = GlobalOptions(**options_dict)
 
-    if args.file:
-        p = get_parser(args.file)
-        polyhedron = p.parse(options)
-        polyhedron.isotropize()
-        call_openscad(polyhedron, options, args.generate_outputs, args.output_dir)
-    else:
-        for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
-            p = get_parser(filepath)
-            polyhedron = p.parse(options)
-            if args.isotropize:
-                polyhedron.isotropize()
-                print(polyhedron.openscad())
+    p = get_parser(args.file)
+    polyhedron = p.parse(options)
+    polyhedron.isotropize()
+    call_openscad(polyhedron, options, args.generate_outputs, args.output_dir)
 
 
 if __name__ == "__main__":
