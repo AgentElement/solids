@@ -5,6 +5,7 @@ import argparse
 import os
 import subprocess
 import copy
+import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
@@ -1203,6 +1204,7 @@ def call_openscad(
 ):
 
     if generate_outputs:
+        start_time = time.time()
         os.makedirs(output_dir, exist_ok=True)
         with open(f"{output_dir}/lengths.csv", "w") as f:
             for edge, data in sorted(
@@ -1215,6 +1217,10 @@ def call_openscad(
         )
         with ProcessPoolExecutor() as executor:
             list(executor.map(call_with_args, range(len(polyhedron.vertices))))
+        time_delta = time.time() - start_time
+        print(
+            f"{len(polyhedron.vertices)} vertices generated in {time_delta:.2f} seconds"
+        )
 
     else:
         openscad_args = OpenscadArgs(polyhedron, options)
@@ -1325,7 +1331,7 @@ def main():
         "index": args.index,
         "colors": args.colors,
         "label_vertices": args.label_vertices,
-        "tubular_supports": args.tubular_supports,
+        "tubular_supports": args.no_tubular_supports,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
     if "vertex_type" in options_dict:
