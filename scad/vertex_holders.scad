@@ -1,4 +1,3 @@
-use <annotated_vertex_figures.scad>
 include <geometry.scad>
 include <constants.scad>
 
