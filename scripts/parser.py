@@ -6,10 +6,13 @@ import os
 import glob
 import subprocess
 import copy
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 import numpy as np
 import pymeshlab
 import stl_reader
+import matplotlib.pyplot as plt
 
 
 class TokenType(Enum):
@@ -1180,18 +1183,61 @@ def get_parser(filepath: str):
             return VisualPolyhedraParser(f.read())
 
 
-def call_openscad(polyhedron: Polyhedron, options: GlobalOptions):
-    openscad_args = OpenscadArgs(polyhedron, options)
-    command = ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
-    print(command)
-    polyhedron.print_offset_edge_lengths()
+def call_openscad_for_vertex(polyhedron, options, output_dir, vertex_index):
+    vertex_options = copy.deepcopy(options)
+    vertex_options.object_type = ObjectType.VERTEX_HOLDER
+    vertex_options.index = vertex_index
+    openscad_args = OpenscadArgs(polyhedron, vertex_options)
+    command = (
+        ["openscad"]
+        + openscad_args.to_openscad_args()
+        + ["-o", f"{output_dir}/v{vertex_index:03}.stl", "scad/interface.scad"]
+    )
     subprocess.run(command)
+
+
+def call_openscad(
+    polyhedron: Polyhedron,
+    options: GlobalOptions,
+    generate_outputs: bool = False,
+    output_dir: str = "out/",
+):
+
+    if generate_outputs:
+        os.makedirs(output_dir, exist_ok=True)
+        with open(f"{output_dir}/lengths.csv", "w") as f:
+            for edge, data in sorted(
+                polyhedron.edges.items(), key=lambda x: x[1]["offset_length"]
+            ):
+                f.write(f"{data['name']},{data['offset_length']:.6f}\n")
+
+        call_with_args = partial(
+            call_openscad_for_vertex, polyhedron, options, output_dir
+        )
+        with ProcessPoolExecutor() as executor:
+            list(executor.map(call_with_args, range(len(polyhedron.vertices))))
+
+    else:
+        openscad_args = OpenscadArgs(polyhedron, options)
+        command = (
+            ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
+        )
+        polyhedron.print_offset_edge_lengths()
+        subprocess.run(command)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", help="Directory containing polyhedron files")
     parser.add_argument("--file", "-f", help="Specific file to process")
+    parser.add_argument(
+        "--output-dir", default="out/", help="Output directory for generated files"
+    )
+    parser.add_argument(
+        "--generate-outputs",
+        action="store_true",
+        help="Generate outputs to output directory",
+    )
 
     parser.add_argument("--edge-diameter", type=float, help="Diameter of edge struts")
     parser.add_argument(
@@ -1293,7 +1339,7 @@ def main():
         p = get_parser(args.file)
         polyhedron = p.parse(options)
         polyhedron.isotropize()
-        call_openscad(polyhedron, options)
+        call_openscad(polyhedron, options, args.generate_outputs, args.output_dir)
     else:
         for filepath in glob.glob(os.path.join(args.directory, "*.txt")):
             p = get_parser(filepath)
