@@ -342,7 +342,7 @@ class Polyhedron:
     def print_offset_edge_lengths(self):
         sorted_edges = sorted(self.edges.items(), key=lambda x: x[1]["offset_length"])
         for edge, data in sorted_edges:
-            print(f"({data['name']}, {data['offset_length']:.6f})")
+            print(f"{data['name']}, {data['offset_length']:.6f}")
 
     def offset_for_edge(self, v1, v2):
         vf1 = self.vertex_figures[v1]
@@ -1110,6 +1110,21 @@ def get_parser(filepath: str):
             return VisualPolyhedraParser(f.read())
 
 
+def save_histogram(polyhedron: Polyhedron, output_dir: str):
+    offset_lengths = [data["offset_length"] for data in polyhedron.edges.values()]
+    offset_lengths.sort()
+
+    plt.figure(figsize=(24, 12))
+    plt.bar(range(len(polyhedron.edges)), offset_lengths, edgecolor="black")
+    plt.title("Offset Lengths Distribution")
+    plt.xlabel("Offset Length")
+    plt.ylabel("Count")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/histogram.png")
+    plt.close()
+
+
 def call_openscad_for_vertex(polyhedron, options, output_dir, vertex_index):
     vertex_options = copy.deepcopy(options)
     vertex_options.object_type = ObjectType.VERTEX_HOLDER
@@ -1139,6 +1154,8 @@ def call_openscad(
             ):
                 f.write(f"{data['name']},{data['offset_length']:.6f}\n")
 
+        save_histogram(polyhedron, output_dir)
+
         call_with_args = partial(
             call_openscad_for_vertex, polyhedron, options, output_dir
         )
@@ -1154,7 +1171,6 @@ def call_openscad(
         command = (
             ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
         )
-        polyhedron.print_offset_edge_lengths()
         subprocess.run(command)
 
 
