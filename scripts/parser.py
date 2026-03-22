@@ -1154,6 +1154,13 @@ def call_openscad(
             ):
                 f.write(f"{data['name']},{data['offset_length']:.6f}\n")
 
+        with open(f"{output_dir}/vertices.csv", "w") as f:
+            for vf in polyhedron.vertex_figures:
+                index = vf.vertex_index
+                degree = len(vf.neighbors)
+                edge_names = ",".join(str(e) for e in vf.edges)
+                f.write(f"{index},{degree},{edge_names}\n")
+
         save_histogram(polyhedron, output_dir)
 
         call_with_args = partial(
