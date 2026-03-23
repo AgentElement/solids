@@ -6,6 +6,7 @@ import os
 import subprocess
 import copy
 import time
+import math
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
@@ -124,6 +125,8 @@ class GlobalOptions:
         radius: float = 200,
         rod_inset: float = 8,
         global_offset: float = 7.72,
+        rod_stock_length: float = 300,
+        rods_per_cut: int = 0,
         min_printer_overhang_angle: float = 30,
         vertex_type: VertexType = VertexType.TUBULAR,
         offset_type: OffsetType = OffsetType.PER_SOLID,
@@ -142,6 +145,8 @@ class GlobalOptions:
         self.radius = radius
         self.rod_inset = rod_inset
         self.global_offset = global_offset
+        self.rod_stock_length = rod_stock_length
+        self.rods_per_cut = rods_per_cut
         self.min_printer_overhang_angle = min_printer_overhang_angle
         self.vertex_type = vertex_type
         self.offset_type = offset_type
@@ -1119,9 +1124,9 @@ def save_histogram(polyhedron: Polyhedron, output_dir: str):
 
     plt.figure(figsize=(24, 12))
     plt.bar(range(len(polyhedron.edges)), offset_lengths, edgecolor="black")
-    plt.title("Offset Lengths Distribution")
-    plt.xlabel("Offset Length")
-    plt.ylabel("Count")
+    plt.title("Rod Lengths Distribution")
+    plt.xlabel("Rod Index")
+    plt.ylabel("Rod Length")
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
     plt.savefig(f"{output_dir}/histogram.png")
@@ -1142,31 +1147,44 @@ def call_openscad_for_vertex(polyhedron, options, output_dir, vertex_index):
         subprocess.run(command)
 
 
+# Chunk a list into parts of size n (last part has size len(lst) % n)
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
 def save_svg(polyhedron: Polyhedron, output_dir: str):
     edges = sorted(polyhedron.edges.items(), key=lambda x: x[1]["offset_length"])
     diameter = polyhedron.options.edge_diameter
-    HEIGHT = 300
-    WIDTH = diameter * len(edges)
-    scaled_diameter = diameter / WIDTH
+    height = polyhedron.options.rod_stock_length
 
-    surface = cairo.SVGSurface(f"{output_dir}/lasercut.svg", WIDTH, HEIGHT)
-    context = cairo.Context(surface)
-    context.scale(WIDTH, HEIGHT)
+    rods_per_cut = (
+        len(edges)
+        if polyhedron.options.rods_per_cut == 0
+        else polyhedron.options.rods_per_cut
+    )
+    n_chunks = math.ceil(len(edges) / rods_per_cut)
 
-    scaled_zero_height = 1 - edges[0][1]["offset_length"] / HEIGHT
-    context.move_to(0, scaled_zero_height)
-    context.line_to(scaled_diameter, scaled_zero_height)
+    for i, edges_chunk in enumerate(chunks(edges, n_chunks)):
+        width = diameter * len(edges_chunk)
+        scaled_diameter = diameter / width
+        surface = cairo.SVGSurface(f"{output_dir}/lasercut{i:03}.svg", width, height)
+        context = cairo.Context(surface)
+        context.scale(width, height)
 
-    for i, (edge, data) in enumerate(edges[1:], start=1):
-        scaled_height = 1 - data["offset_length"] / HEIGHT
-        context.line_to(scaled_diameter * i, scaled_height)
-        context.line_to(scaled_diameter * (i + 1), scaled_height)
-    context.line_to(1, 1)
-    context.line_to(0, 1)
-    context.fill_preserve()
-    context.fill()
-    surface.finish()
-    surface.flush()
+        scaled_zero_height = 1 - edges_chunk[0][1]["offset_length"] / height
+        context.move_to(0, scaled_zero_height)
+        context.line_to(scaled_diameter, scaled_zero_height)
+
+        for i, (edge, data) in enumerate(edges_chunk[1:], start=1):
+            scaled_height = 1 - data["offset_length"] / height
+            context.line_to(scaled_diameter * i, scaled_height)
+            context.line_to(scaled_diameter * (i + 1), scaled_height)
+        context.line_to(1, 1)
+        context.line_to(0, 1)
+        context.fill_preserve()
+        surface.finish()
+        surface.flush()
 
 
 def call_openscad(
@@ -1245,6 +1263,14 @@ def main():
         "--rod-inset", type=float, help="Vertex holders will inset edges by this amount"
     )
     parser.add_argument(
+        "--rod-stock-length", type=float, help="Height of rod stock material"
+    )
+    parser.add_argument(
+        "--rods-per-cut",
+        type=int,
+        help="Number of rods per cut. If 0 (default), then cut all rods",
+    )
+    parser.add_argument(
         "--global-offset",
         type=float,
         help="If --offset-type is global, then set all offsets to this value",
@@ -1311,6 +1337,8 @@ def main():
         "radius": args.radius,
         "rod_inset": args.rod_inset,
         "global_offset": args.global_offset,
+        "rod_stock_length": args.rod_stock_length,
+        "rods_per_cut": args.rods_per_cut,
         "min_printer_overhang_angle": args.min_printer_overhang_angle,
         "vertex_type": args.vertex_type,
         "offset_type": args.offset_type,
