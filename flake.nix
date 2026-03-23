@@ -13,7 +13,15 @@
     in
     {
       devShells.${system}.default = pkgs.mkShell {
-        packages = [ pkgs.uv ];
+        packages = [
+          pkgs.uv
+          pkgs.ninja
+          pkgs.cairo
+        ];
+
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+        ];
 
         # C libraries for numpy,
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
