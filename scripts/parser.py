@@ -288,11 +288,11 @@ class VertexFigure:
             -1000
             if i == index
             else (self.vecs[index] @ self.vecs[i]) / np.linalg.norm(self.vecs[i])
-            for i in range(1, len(self.vecs))
+            for i in range(len(self.vecs))
         ]
         max_score = max(scores)
         max_idx = scores.index(max_score)
-        return self.vecs[max_idx + 1]
+        return self.vecs[max_idx]
 
     def axis_offset(self, v0: np.ndarray, v1: np.ndarray) -> float:
         c = np.dot(v0, v1)
