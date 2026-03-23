@@ -117,9 +117,7 @@ module tubular_vertex_holder(vecs, offsets=[], edge_list=[], index) {
                     +(half_edge_offset+TUBE_DEPTH)*v.z;
 
                 hull() {
-                    // First, move endpoint to tube length.
-                    // Then move endpoint inwards along xy axes by base_inset, to give nice overhangs instead of straight drops
-                    // Clamp endpoint to 0, so as not to move in the opposite direction of v
+                    // Move endpoint to base position along cutoff plane;
                     translate(clamped_base_position * [v.x, v.y, 0])
                     // Move endpoint downwards to cutoff plane
                     translate([0, 0, tube_top_to_cutoff_plane])
