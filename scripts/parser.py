@@ -1135,7 +1135,8 @@ def call_openscad_for_vertex(polyhedron, options, output_dir, vertex_index):
         + openscad_args.to_openscad_args()
         + ["-o", f"{output_dir}/v{vertex_index:03}.stl", "scad/interface.scad"]
     )
-    subprocess.run(command)
+    if not options.dry_run:
+        subprocess.run(command)
 
 
 def call_openscad(
@@ -1178,7 +1179,8 @@ def call_openscad(
         command = (
             ["openscad"] + openscad_args.to_openscad_args() + ["scad/interface.scad"]
         )
-        subprocess.run(command)
+        if not options.dry_run:
+            subprocess.run(command)
 
 
 def main():
@@ -1263,6 +1265,11 @@ def main():
         action="store_true",
         help="Enable isotropic remeshing",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Don't produce stl outputs",
+    )
 
     args = parser.parse_args()
     options_dict = {
@@ -1282,6 +1289,7 @@ def main():
         "colors": args.colors,
         "label_vertices": args.label_vertices,
         "tubular_supports": args.no_tubular_supports,
+        "dry_run": args.dry_run,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
     if "vertex_type" in options_dict:
