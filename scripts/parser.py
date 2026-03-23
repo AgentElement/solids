@@ -13,6 +13,7 @@ import numpy as np
 import pymeshlab
 import stl_reader
 import matplotlib.pyplot as plt
+import cairo
 
 
 class TokenType(Enum):
@@ -132,6 +133,7 @@ class GlobalOptions:
         colors: Optional[list[str]] = None,
         label_vertices: bool = True,
         tubular_supports: bool = True,
+        dry_run: bool = False,
     ) -> None:
         self.edge_diameter = edge_diameter
         self.diameter_tolerance_fit = diameter_tolerance_fit
@@ -149,6 +151,7 @@ class GlobalOptions:
         self.colors = colors if colors is not None else ["red", "green", "blue"]
         self.label_vertices = label_vertices
         self.tubular_supports = tubular_supports
+        self.dry_run = dry_run
 
         self.tube_depth = rod_inset + wall_thickness
         self.outer_tube_radius = edge_diameter / 2 + wall_thickness
@@ -1139,6 +1142,33 @@ def call_openscad_for_vertex(polyhedron, options, output_dir, vertex_index):
         subprocess.run(command)
 
 
+def save_svg(polyhedron: Polyhedron, output_dir: str):
+    edges = sorted(polyhedron.edges.items(), key=lambda x: x[1]["offset_length"])
+    diameter = polyhedron.options.edge_diameter
+    HEIGHT = 300
+    WIDTH = diameter * len(edges)
+    scaled_diameter = diameter / WIDTH
+
+    surface = cairo.SVGSurface(f"{output_dir}/lasercut.svg", WIDTH, HEIGHT)
+    context = cairo.Context(surface)
+    context.scale(WIDTH, HEIGHT)
+
+    scaled_zero_height = 1 - edges[0][1]["offset_length"] / HEIGHT
+    context.move_to(0, scaled_zero_height)
+    context.line_to(scaled_diameter, scaled_zero_height)
+
+    for i, (edge, data) in enumerate(edges[1:], start=1):
+        scaled_height = 1 - data["offset_length"] / HEIGHT
+        context.line_to(scaled_diameter * i, scaled_height)
+        context.line_to(scaled_diameter * (i + 1), scaled_height)
+    context.line_to(1, 1)
+    context.line_to(0, 1)
+    context.fill_preserve()
+    context.fill()
+    surface.finish()
+    surface.flush()
+
+
 def call_openscad(
     polyhedron: Polyhedron,
     options: GlobalOptions,
@@ -1163,6 +1193,7 @@ def call_openscad(
                 f.write(f"{index},{degree},{edge_names}\n")
 
         save_histogram(polyhedron, output_dir)
+        save_svg(polyhedron, output_dir)
 
         call_with_args = partial(
             call_openscad_for_vertex, polyhedron, options, output_dir
