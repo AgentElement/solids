@@ -80,7 +80,7 @@ function cutoff_height(vecs, offsets) =
     )
     lowest_point;
 
-module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
+module tubular_vertex_holder(vecs, offsets=[], edge_list=[], index) {
     offsets = len(offsets) == 0 ?
         [for (i=[0:len(vecs)-1]) offset_from_single_vec(i, vecs)] :
         offsets;
@@ -148,24 +148,36 @@ module tubular_vertex_holder(vecs, offsets=[], edge_list=[]) {
             // Tubes
             translate(half_edge_offset * v)
             rotate(rotation)
-            union() {
-                cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
-                translate([0, 0, -half_edge_offset])
-                cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
-
+            difference() {
+                union() {
+                    cylinder(r=OUTER_TUBE_RADIUS, h=TUBE_DEPTH);
+                    translate([0, 0, -half_edge_offset])
+                    cylinder(r=OUTER_TUBE_RADIUS, h=WALL_THICKNESS+half_edge_offset);
+                }
                 // Add text to tube holders
                 if (LABEL_VERTICES) {
-                    rotate([0, 0, 180])
+                    rotate([0, 0, 90])
                     intersection() {
                         translate([0, 0, TUBE_DEPTH-WALL_THICKNESS])
                         rotate([0, 90, 0])
                         linear_extrude(20)
                         text(str(edge_list[i]), valign="center", size = OUTER_TUBE_RADIUS);
                         difference() {
-                            cylinder(r=OUTER_TUBE_RADIUS+WALL_THICKNESS/2, h=RADIUS, center=true);
                             cylinder(r=OUTER_TUBE_RADIUS, h=RADIUS, center=true);
+                            cylinder(r=OUTER_TUBE_RADIUS-0.5, h=RADIUS, center=true);
                         };
-                    }
+                    };
+                    rotate([0, 0, 270])
+                    intersection() {
+                        translate([0, 0, TUBE_DEPTH-WALL_THICKNESS])
+                        rotate([0, 90, 0])
+                        linear_extrude(20)
+                        text(str(index), valign="center", size = OUTER_TUBE_RADIUS);
+                        difference() {
+                            cylinder(r=OUTER_TUBE_RADIUS, h=RADIUS, center=true);
+                            cylinder(r=OUTER_TUBE_RADIUS-0.5, h=RADIUS, center=true);
+                        };
+                    };
                 }
             }
         }
