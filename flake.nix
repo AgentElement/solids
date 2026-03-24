@@ -17,6 +17,7 @@
           pkgs.uv
           pkgs.ninja
           pkgs.cairo
+          pkgs.openscad
         ];
 
         nativeBuildInputs = with pkgs; [
