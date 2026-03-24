@@ -1163,12 +1163,12 @@ def save_svg(polyhedron: Polyhedron, output_dir: str):
         if polyhedron.options.rods_per_cut == 0
         else polyhedron.options.rods_per_cut
     )
-    n_chunks = math.ceil(len(edges) / rods_per_cut)
 
-    for i, edges_chunk in enumerate(chunks(edges, n_chunks)):
+    for i, edges_chunk in enumerate(chunks(edges, rods_per_cut)):
         width = diameter * len(edges_chunk)
         scaled_diameter = diameter / width
         surface = cairo.SVGSurface(f"{output_dir}/lasercut{i:03}.svg", width, height)
+        surface.set_document_unit(cairo.SVGUnit.MM)
         context = cairo.Context(surface)
         context.scale(width, height)
 
