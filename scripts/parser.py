@@ -6,7 +6,6 @@ import os
 import subprocess
 import copy
 import time
-import math
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
@@ -109,7 +108,7 @@ class Token:
             case TokenType.SEMI:
                 return ";"
             case _:
-                raise Exception(f"Bad token type: {self.ttype}")
+                raise ValueError(f"Bad token type: {self.ttype}")
 
     def __str__(self) -> str:
         return f"{self.pos} {self.ttype} {self.lexeme}"
@@ -153,7 +152,7 @@ class GlobalOptions:
         self.object_type = object_type
         self.by_tag = by_tag
         self.index = index
-        self.colors = colors if colors is not None else ["red", "green", "blue"]
+        self.colors = colors or ["red", "green", "blue"]
         self.label_vertices = label_vertices
         self.tubular_supports = tubular_supports
         self.dry_run = dry_run
@@ -191,7 +190,7 @@ class VertexFigure:
 
         plane_normal = self.plane_normal()
         normal = self.normal()
-        if normal is not None and plane_normal is not None:
+        if normal and plane_normal:
             direction = 1 if np.dot(plane_normal, normal) > 0 else -1
             rotated, euler = self.reorient_to(direction * plane_normal)
             self.std = rotated
@@ -1100,7 +1099,7 @@ class VisualPolyhedraParser:
         )
 
     def dump_tokenstream(self):
-        while self.lexer.peek(1).ttype != TokenType:
+        while self.lexer.peek(1).ttype != TokenType.EOF:
             tok = self.lexer.get()
             print(tok.ttype, tok.lexeme)
 
@@ -1314,7 +1313,7 @@ def main():
     )
     parser.add_argument(
         "--no-tubular-supports",
-        action="store_false",
+        action="store_true",
         help="Disable supports for tubular vertices",
     )
     parser.add_argument(
@@ -1347,7 +1346,7 @@ def main():
         "index": args.index,
         "colors": args.colors,
         "label_vertices": args.label_vertices,
-        "tubular_supports": args.no_tubular_supports,
+        "tubular_supports": not args.no_tubular_supports,
         "dry_run": args.dry_run,
     }
     options_dict = {k: v for k, v in options_dict.items() if v is not None}
