@@ -11,3 +11,8 @@ dependencies = [
     "pymeshlab>=2025.7.post1",
     "stl-reader>=0.2.3",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
