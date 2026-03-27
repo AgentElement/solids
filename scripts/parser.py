@@ -190,7 +190,7 @@ class VertexFigure:
 
         plane_normal = self.plane_normal()
         normal = self.normal()
-        if normal and plane_normal:
+        if normal is not None and plane_normal is not None:
             direction = 1 if np.dot(plane_normal, normal) > 0 else -1
             rotated, euler = self.reorient_to(direction * plane_normal)
             self.std = rotated
@@ -474,10 +474,12 @@ class Polyhedron:
 
         mesh = ms.current_mesh()
 
-        self.__init__(
+        # Reinitialize with new mesh data
+        Polyhedron.__init__(
+            self,
+            name=self.name,
             vertices=mesh.vertex_matrix(),
             faces=mesh.face_matrix().tolist(),
-            name=self.name,
             options=self.options,
         )
 
@@ -519,7 +521,7 @@ class VisualPolyhedron(Polyhedron):
                         neg = 1
                     case TokenType.MINUS:
                         neg = -1
-                    case TokenType.FLOAT:
+                    case TokenType.FLOAT | TokenType.INT:
                         evaluated.append(neg * float(token.lexeme))
                     case TokenType.NAME:
                         evaluated.append(neg * self.constant_floats[token.lexeme])
@@ -687,16 +689,16 @@ class VisualPolyhedraLexer:
     def munch_num(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
         lexeme = ""
         offset = 0
-        while input[pos + offset].isnumeric():
+        while pos + offset < len(input) and input[pos + offset].isnumeric():
             lexeme += input[pos + offset]
             offset += 1
 
-        if input[pos + offset] != ".":
+        if pos + offset >= len(input) or input[pos + offset] != ".":
             return (Token(TokenType.INT, lexeme, pos, line, column), offset)
         offset += 1
         lexeme += "."
 
-        while input[pos + offset].isnumeric():
+        while pos + offset < len(input) and input[pos + offset].isnumeric():
             lexeme += input[pos + offset]
             offset += 1
 
@@ -704,13 +706,13 @@ class VisualPolyhedraLexer:
 
     @staticmethod
     def munch_name(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
-        if not input[pos].isalpha():
+        if pos >= len(input) or not input[pos].isalpha():
             raise Exception(f"Cannot parse name at position {pos}")
 
         lexeme = input[pos]
         offset = 1
 
-        while input[pos + offset].isalnum():
+        while pos + offset < len(input) and input[pos + offset].isalnum():
             lexeme += input[pos + offset]
             offset += 1
 
@@ -743,6 +745,18 @@ class VisualPolyhedraLexer:
                 case "}":
                     self.tokenstream.append(
                         Token(TokenType.RBRACE, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "[":
+                    self.tokenstream.append(
+                        Token(TokenType.LSQUARE, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case "]":
+                    self.tokenstream.append(
+                        Token(TokenType.RSQUARE, None, i, line, column)
                     )
                     i += 1
                     column += 1
@@ -789,6 +803,12 @@ class VisualPolyhedraLexer:
                 case ":":
                     self.tokenstream.append(
                         Token(TokenType.COLON, None, i, line, column)
+                    )
+                    i += 1
+                    column += 1
+                case ";":
+                    self.tokenstream.append(
+                        Token(TokenType.SEMI, None, i, line, column)
                     )
                     i += 1
                     column += 1
@@ -1057,12 +1077,11 @@ class VisualPolyhedraParser:
 
     # vertex_block := vertex_def*
     def vertex_block(self):
-        t1 = self.lexer.peek(1).ttype
-        t2 = self.lexer.peek(2).ttype
-        while t1 == TokenType.NAME and t2 == TokenType.EQ:
+        while (
+            self.lexer.peek(1).ttype == TokenType.NAME
+            and self.lexer.peek(2).ttype == TokenType.EQ
+        ):
             self.vertex_def()
-            t1 = self.lexer.peek(1).ttype
-            t2 = self.lexer.peek(2).ttype
 
     # face_block := Faces : \n face_def*
     def face_block(self):
