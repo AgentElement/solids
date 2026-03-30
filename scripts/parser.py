@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional, Union
 
 import argparse
 import os
@@ -176,14 +176,13 @@ class VertexFigure:
         tag: int,
         options: GlobalOptions,
     ) -> None:
-        self.vertex = vertex
-        self.vertex_index = vertex_index
-        self.vecs = vecs
-        self.neighbors = neighbors
-
-        self.std = vecs
-        self.euler = [0, 0, 0]
-        self.options = options
+        self.vertex: np.ndarray = vertex
+        self.vertex_index: int = vertex_index
+        self.vecs: np.ndarray = vecs
+        self.neighbors: list[int] = neighbors
+        self.std: np.ndarray = vecs
+        self.euler: list[float] = [0.0, 0.0, 0.0]
+        self.options: GlobalOptions = options
 
         self.half_edge_offset = self.compute_offsets()
         self.vertex_offset = self.largest_offset()
@@ -198,7 +197,7 @@ class VertexFigure:
 
         self.tag = tag
 
-    def annotate_edge_names(self, edges: dict[tuple[int, int], dict[str, ...]]):
+    def annotate_edge_names(self, edges: dict[tuple[int, int], dict[str, Any]]) -> None:
         self.edges = []
         for neighbor in self.neighbors:
             edge = (
@@ -240,29 +239,29 @@ class VertexFigure:
         # Handle gimbal lock cases
         elif R[2, 0] < 0:
             # y = 90 degrees
-            return [float(np.atan2(-R[1, 2], R[1, 1])), 90, 0]
+            return [float(np.atan2(-R[1, 2], R[1, 1])), 90.0, 0.0]
         else:
             # y = -90 degrees
-            return [float(np.atan2(-R[1, 2], R[1, 1])), -90, 0]
+            return [float(np.atan2(-R[1, 2], R[1, 1])), -90.0, 0.0]
 
     # Orient normal to target, then apply this rotation to all vectors in the
     # figure
     def reorient_to(
-        self, normal, target=np.array([0, 0, 1])
+        self, normal, target: np.ndarray = np.array([0.0, 0.0, 1.0])
     ) -> tuple[np.ndarray, list[float]]:
         nn = np.linalg.norm(normal)
         if nn < 1e-9:
-            return (self.vecs, [0, 0, 0])
+            return (self.vecs, [0.0, 0.0, 0.0])
         u_mean = normal / nn
         axis = np.cross(u_mean, target)
         len_axis = np.linalg.norm(axis)
         dot_val = np.dot(u_mean, target)
         if len_axis < 1e-6:
             if dot_val > 0:
-                return (self.vecs, [0, 0, 0])
+                return (self.vecs, [0.0, 0.0, 0.0])
             else:
                 flipped = np.array([np.array([v[0], -v[1], -v[2]]) for v in self.vecs])
-                return (flipped, [180, 0, 0])
+                return (flipped, [180.0, 0.0, 0.0])
         u = axis / len_axis
         c = dot_val
         s = len_axis
@@ -316,21 +315,27 @@ class VertexFigure:
         closest = self.min_cos_dist(index)
         return self.axis_offset(self.vecs[index], closest)
 
-    def compute_offsets(self):
+    def compute_offsets(self) -> np.ndarray:
         return np.array([self.offset_from_single_vec(i) for i in range(len(self.vecs))])
 
-    def largest_offset(self):
-        return max(self.half_edge_offset)
+    def largest_offset(self) -> float:
+        return float(max(self.half_edge_offset))
 
 
 class Polyhedron:
-    def __init__(self, name, vertices, faces, options: GlobalOptions) -> None:
-        self.name = name
-        self.faces = faces
+    def __init__(
+        self,
+        name: str,
+        vertices: np.ndarray,
+        faces: list[list[str]],
+        options: GlobalOptions,
+    ) -> None:
+        self.name: str = name
+        self.faces: list[list[str]] = faces
         self.vertices: np.ndarray = vertices
-        self.options = options
+        self.options: GlobalOptions = options
 
-        self.edges: dict[tuple[int, int], dict[str, ...]] = self.make_edgelist()
+        self.edges: dict[tuple[int, int], Any] = self.make_edgelist()
         self.vertex_figures = self.annotate_vertex_figures()
         self.solid_offset = self.largest_offset()
         self.compute_edge_lengths()
@@ -393,7 +398,7 @@ class Polyhedron:
             }
 
     # Convert facelist into edgelist
-    def make_edgelist(self) -> dict[tuple[int, int], list[...]]:
+    def make_edgelist(self) -> dict[tuple[int, int], Any]:
         edges = set()
         for face in self.faces:
             for v1, v2 in zip(face, face[1:] + [face[0]]):
@@ -401,7 +406,7 @@ class Polyhedron:
                 v2_int = int(v2)
                 if v1_int < len(self.vertices) and v2_int < len(self.vertices):
                     edges.add((v1_int, v2_int) if v1_int < v2_int else (v2_int, v1_int))
-        return {e: [] for e in edges}
+        return {e: {} for e in edges}
 
     def vertex_figure_signature(self, vecs) -> tuple[int, ...]:
         precision = 100000
@@ -431,10 +436,8 @@ class Polyhedron:
         vertex_figures = []
         for i, vertex in enumerate(vertices_arr):
             neighbors = [
-                e[1] if e[0] == i else (e[0] if e[1] == i else None)
-                for e in self.edges.keys()
+                e[1] if e[0] == i else e[0] for e in self.edges.keys() if i in e
             ]
-            neighbors = [n for n in neighbors if n is not None]
             vecs = [(vertices_arr[n] - vertex) for n in neighbors]
             vecs = [
                 v / (np.linalg.norm(v) if np.linalg.norm(v) > 0 else 1) for v in vecs
@@ -487,12 +490,12 @@ class Polyhedron:
 class VisualPolyhedron(Polyhedron):
     def __init__(
         self,
-        name,
-        vertex_tokenstream,
-        faces,
-        constant_exacts,
-        constant_floats,
-        constant_sequence,
+        name: str,
+        vertex_tokenstream: dict[str, list[Token]],
+        faces: list[list[str]],
+        constant_exacts: dict[str, list[Token]],
+        constant_floats: dict[str, float],
+        constant_sequence: list[str],
         options: GlobalOptions,
     ) -> None:
         self.vertex_tokenstream = vertex_tokenstream
@@ -508,10 +511,10 @@ class VisualPolyhedron(Polyhedron):
 
         super().__init__(name, vertices, faces, options)
 
-    def evaluate_vertices(self):
-        vertices = {}
+    def evaluate_vertices(self) -> np.ndarray:
+        vertices: dict[int, list[float]] = {}
         for vertex, token_list in self.vertex_tokenstream.items():
-            evaluated = []
+            evaluated: list[float] = []
             neg = 1
             for token in token_list:
                 match token.ttype:
@@ -522,9 +525,11 @@ class VisualPolyhedron(Polyhedron):
                     case TokenType.MINUS:
                         neg = -1
                     case TokenType.FLOAT | TokenType.INT:
-                        evaluated.append(neg * float(token.lexeme))
+                        evaluated.append(neg * float(token.literal()))
                     case TokenType.NAME:
-                        evaluated.append(neg * self.constant_floats[token.lexeme])
+                        lexeme = token.lexeme
+                        assert lexeme is not None
+                        evaluated.append(neg * self.constant_floats[lexeme])
                     case _:
                         raise ValueError(
                             "Bad token encountered while evaluating vertices"
@@ -532,8 +537,8 @@ class VisualPolyhedron(Polyhedron):
 
             vertices[int(vertex[1:])] = evaluated
         vertex_keys = sorted(vertices.keys())
-        vertices = np.array([vertices[v] for v in vertex_keys])
-        return vertices
+        vertices_arr = np.array([vertices[v] for v in vertex_keys])
+        return vertices_arr
 
 
 class OpenscadArgs:
@@ -568,7 +573,9 @@ class OpenscadArgs:
 
         return vertices, edges, vertex_figures, eulers, tags, vertex_figure_edges
 
-    def polyhedron_offset_array(self, polyhedron: Polyhedron) -> list[...]:
+    def polyhedron_offset_array(
+        self, polyhedron: Polyhedron
+    ) -> list[Union[np.ndarray, list[float]]]:
         match self.options.offset_type:
             case OffsetType.GLOBAL:
                 value = self.options.global_offset
@@ -640,7 +647,7 @@ class OpenscadArgs:
             "["
             + ",".join(
                 "[" + ",".join(str(v) for v in o.tolist()) + "]"
-                if hasattr(o, "tolist")
+                if isinstance(o, np.ndarray)
                 else "[" + ",".join(str(v) for v in o) + "]"
                 for o in self.offsets
             )
@@ -682,8 +689,8 @@ class StlParser:
 # Lex Visual Polyhedra files
 class VisualPolyhedraLexer:
     def __init__(self) -> None:
-        self.tokenstream = []
-        self.pos = 0
+        self.tokenstream: list[Token] = []
+        self.pos: int = 0
 
     @staticmethod
     def munch_num(input: str, pos: int, line: int, column: int) -> tuple[Token, int]:
@@ -856,19 +863,19 @@ class ConstantRegion(Enum):
 
 # Parse visual polyhedra files to Polyhedron objects
 class VisualPolyhedraParser:
-    def __init__(self, input) -> None:
+    def __init__(self, input: str) -> None:
         self.lexer = VisualPolyhedraLexer()
         self.lexer.lex(input)
 
-        self.vertices = {}
-        self.faces = []
-        self.name = None
+        self.vertices: dict[str, list[Token]] = {}
+        self.faces: list[list[str]] = []
+        self.name: str = ""
 
-        self.constant_exacts = {}
-        self.constant_floats = {}
-        self.constant_def_sequence = []
-        self.constant_where_sequence = []
-        self.constant_sequence = []
+        self.constant_exacts: dict[str, list[Token]] = {}
+        self.constant_floats: dict[str, float] = {}
+        self.constant_def_sequence: list[str] = []
+        self.constant_where_sequence: list[str] = []
+        self.constant_sequence: list[str] = []
 
     def syntax_error(self):
         token = self.lexer.peek(0)
@@ -937,14 +944,16 @@ class VisualPolyhedraParser:
     # constant_def := name = float = [int|name|*|(|)|+|/|*|^] \n
     # constant_def := name = [int|name|*|(|)|+|/|^] \n
     def constant_def(self, region: ConstantRegion):
-        const = self.expect(TokenType.NAME).lexeme
-        floatv = 0.0
-        exactv = []
+        token = self.expect(TokenType.NAME)
+        const = token.lexeme
+        assert const is not None
+        floatv: float = 0.0
+        exactv: list[Token] = []
 
         self.expect(TokenType.EQ)
         ttype = self.lexer.peek(1).ttype
         if ttype == TokenType.FLOAT:
-            floatv = self.expect(TokenType.FLOAT).literal()
+            floatv = float(self.expect(TokenType.FLOAT).literal())
             ttype = self.lexer.peek(1).ttype
 
             if ttype == TokenType.NEWLINE:
@@ -1007,7 +1016,9 @@ class VisualPolyhedraParser:
     # vertex_def := name = (value, value, value) \n
     def vertex_def(self):
         token_list = []
-        name = self.expect(TokenType.NAME).lexeme
+        name_token = self.expect(TokenType.NAME)
+        name = name_token.lexeme
+        assert name is not None
         self.expect(TokenType.EQ)
         self.expect(TokenType.LPAREN)
         token_list.append(Token(TokenType.LSQUARE, None, -1, -1, -1))
@@ -1105,12 +1116,12 @@ class VisualPolyhedraParser:
             self.constant_where_sequence + self.constant_def_sequence
         )
 
-        faces = [[int(v) for v in f] for f in self.faces]
+        name = self.name
 
         return VisualPolyhedron(
-            self.name,
+            name,
             self.vertices,
-            faces,
+            self.faces,
             self.constant_exacts,
             self.constant_floats,
             self.constant_sequence,
