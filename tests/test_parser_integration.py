@@ -27,7 +27,7 @@ from parser import (
     OpenscadArgs,
     VertexType,
     OffsetType,
-    get_parser
+    get_parser,
 )
 
 
@@ -396,8 +396,6 @@ Faces:
 
     def test_full_parsing_pipeline(self, sample_polyhedron_file):
         """Test the full parsing pipeline from file to polyhedron."""
-        from parser import get_parser
-
         parser = get_parser(sample_polyhedron_file)
         options = GlobalOptions()
         polyhedron = parser.parse(options)
@@ -428,7 +426,7 @@ Faces:
     def test_output_directory_creation(self, sample_polyhedron_file):
         """Test that output directory is created when needed."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = subprocess.run(
+            subprocess.run(
                 [
                     sys.executable,
                     "-m",
