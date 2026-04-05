@@ -1,0 +1,12 @@
+uv run python scripts/parser.py \
+    --file data/Bunny-LowPoly.stl \
+    --offset-type per_half_edge \
+    --colors red blue green yellow \
+    --radius 750 \
+    --rod-inset 6 \
+    --rod-stock-length 300 \
+    --rods-per-cut 30 \
+    --isotropize \
+    --label-vertices \
+    --generate-outputs \
+    --dry-run
