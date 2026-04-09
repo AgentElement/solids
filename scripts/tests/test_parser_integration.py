@@ -1,5 +1,5 @@
 """
-Integration tests for scripts/parser.py
+Integration tests for vertexprint.py
 
 These tests verify the parser functionality end-to-end, including:
 - File parsing (Visual Polyhedra and STL formats)
@@ -15,7 +15,7 @@ import subprocess
 import pytest
 from pathlib import Path
 
-from scripts.parser import (
+from scripts.vertexprint import (
     VisualPolyhedraParser,
     VisualPolyhedraLexer,
     StlParser,
