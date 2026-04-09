@@ -18,6 +18,7 @@
           pkgs.ninja
           pkgs.cairo
           pkgs.openscad
+          pkgs.python3
         ];
 
         nativeBuildInputs = with pkgs; [
