@@ -524,7 +524,26 @@ wheels = [
 ]
 
 [[package]]
-name = "solids"
+name = "stl-reader"
+version = "0.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/23/e81ae8b096f7c875da85888badef26fdc660afbee1304e4244f16c0f8360/stl-reader-0.2.3.tar.gz", hash = "sha256:729a90b3e57a85e05cff5da056970c692b71d2d58edd5a6e0ff9409cb35631dd", size = 13785, upload-time = "2025-06-04T18:13:39.09Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/b1/9cc98927146f97e2f8e80a3c07727e503266a0c3902975a0e8f4ea48003d/stl_reader-0.2.3-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:ce0b3e58bd92a0773f6f0a22a837bcef11cec8117f7bd387bce616dba3066a25", size = 44134, upload-time = "2025-06-04T18:13:23.581Z" },
+    { url = "https://files.pythonhosted.org/packages/80/f3/84eaed093dce08a3b3e87d88c68b384498199726a44083fbe258d41ae12f/stl_reader-0.2.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5552e15a309f9ec7c3c3e15915a549b220aeb5d9de32de744c6cbdeb7a265ba0", size = 41535, upload-time = "2025-06-04T18:13:24.945Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/8d/fcd5a7164d1023b4ccb286296e07e4750541f5bfda7e6bd689d78d0a3fd3/stl_reader-0.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0943fdf41e19a7a822f25b6723a7fdee55539a71f1b49a652e1042dd5ca8d5ff", size = 66004, upload-time = "2025-06-04T18:13:25.803Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/c7/7d34a73b0c8aa0f9a25ba6afa66f5ff7399554dc134976f5e968f0d62b7f/stl_reader-0.2.3-cp312-cp312-win_amd64.whl", hash = "sha256:5b78344775b0b7cdda6f97cf56ee599f5352e7b8bb7ef4f42862d16d4bd3bd03", size = 46959, upload-time = "2025-06-04T18:13:27.043Z" },
+    { url = "https://files.pythonhosted.org/packages/72/dd/7ac56ab093b50c62b28f12e2fd2a33314867f8fa35954f8b2426dc3e75e5/stl_reader-0.2.3-cp313-cp313-macosx_10_14_x86_64.whl", hash = "sha256:5bf81d071d5b5cf6b61eafc90dc0d3876ede243347bb45146fe17da7d7632489", size = 44133, upload-time = "2025-06-04T18:13:28.461Z" },
+    { url = "https://files.pythonhosted.org/packages/40/d7/b4e9466426c41ecdd4153ffa461e48351a73d179fb878f4670d16b89d537/stl_reader-0.2.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f0a071cd1e27b06863b72c8e707af41c031f6ae871bc0d98fdde4b940c6d8c2f", size = 41535, upload-time = "2025-06-04T18:13:29.397Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/b2/c1e5ed886563a8fcca9c7060ae655488ff591cc4630daa9d63a0cbe70595/stl_reader-0.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6700a0f24fe5dfb2a43c772ed88e4031d07079d4e88708560208060a952e3806", size = 66002, upload-time = "2025-06-04T18:13:30.248Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/71/9a60bd4917928eded628ac4bf65899c7af6da04954284656d4989cef5b5f/stl_reader-0.2.3-cp313-cp313-win_amd64.whl", hash = "sha256:663216b8d3c3e0ec7176ff9d4e861d1e07ae92a422f498eb9293994eae8b61da", size = 46966, upload-time = "2025-06-04T18:13:31.325Z" },
+]
+
+[[package]]
+name = "vertexprint"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -551,22 +570,3 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]
-
-[[package]]
-name = "stl-reader"
-version = "0.2.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/23/e81ae8b096f7c875da85888badef26fdc660afbee1304e4244f16c0f8360/stl-reader-0.2.3.tar.gz", hash = "sha256:729a90b3e57a85e05cff5da056970c692b71d2d58edd5a6e0ff9409cb35631dd", size = 13785, upload-time = "2025-06-04T18:13:39.09Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/b1/9cc98927146f97e2f8e80a3c07727e503266a0c3902975a0e8f4ea48003d/stl_reader-0.2.3-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:ce0b3e58bd92a0773f6f0a22a837bcef11cec8117f7bd387bce616dba3066a25", size = 44134, upload-time = "2025-06-04T18:13:23.581Z" },
-    { url = "https://files.pythonhosted.org/packages/80/f3/84eaed093dce08a3b3e87d88c68b384498199726a44083fbe258d41ae12f/stl_reader-0.2.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5552e15a309f9ec7c3c3e15915a549b220aeb5d9de32de744c6cbdeb7a265ba0", size = 41535, upload-time = "2025-06-04T18:13:24.945Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/8d/fcd5a7164d1023b4ccb286296e07e4750541f5bfda7e6bd689d78d0a3fd3/stl_reader-0.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0943fdf41e19a7a822f25b6723a7fdee55539a71f1b49a652e1042dd5ca8d5ff", size = 66004, upload-time = "2025-06-04T18:13:25.803Z" },
-    { url = "https://files.pythonhosted.org/packages/5e/c7/7d34a73b0c8aa0f9a25ba6afa66f5ff7399554dc134976f5e968f0d62b7f/stl_reader-0.2.3-cp312-cp312-win_amd64.whl", hash = "sha256:5b78344775b0b7cdda6f97cf56ee599f5352e7b8bb7ef4f42862d16d4bd3bd03", size = 46959, upload-time = "2025-06-04T18:13:27.043Z" },
-    { url = "https://files.pythonhosted.org/packages/72/dd/7ac56ab093b50c62b28f12e2fd2a33314867f8fa35954f8b2426dc3e75e5/stl_reader-0.2.3-cp313-cp313-macosx_10_14_x86_64.whl", hash = "sha256:5bf81d071d5b5cf6b61eafc90dc0d3876ede243347bb45146fe17da7d7632489", size = 44133, upload-time = "2025-06-04T18:13:28.461Z" },
-    { url = "https://files.pythonhosted.org/packages/40/d7/b4e9466426c41ecdd4153ffa461e48351a73d179fb878f4670d16b89d537/stl_reader-0.2.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f0a071cd1e27b06863b72c8e707af41c031f6ae871bc0d98fdde4b940c6d8c2f", size = 41535, upload-time = "2025-06-04T18:13:29.397Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/b2/c1e5ed886563a8fcca9c7060ae655488ff591cc4630daa9d63a0cbe70595/stl_reader-0.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6700a0f24fe5dfb2a43c772ed88e4031d07079d4e88708560208060a952e3806", size = 66002, upload-time = "2025-06-04T18:13:30.248Z" },
-    { url = "https://files.pythonhosted.org/packages/f8/71/9a60bd4917928eded628ac4bf65899c7af6da04954284656d4989cef5b5f/stl_reader-0.2.3-cp313-cp313-win_amd64.whl", hash = "sha256:663216b8d3c3e0ec7176ff9d4e861d1e07ae92a422f498eb9293994eae8b61da", size = 46966, upload-time = "2025-06-04T18:13:31.325Z" },
-]
