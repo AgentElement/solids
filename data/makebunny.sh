@@ -1,4 +1,4 @@
-uv run python scripts/parser.py \
+uv run python scripts/vertexprint.py \
     --file data/Bunny-LowPoly.stl \
     --offset-type per_half_edge \
     --colors red blue green yellow \
