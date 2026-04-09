@@ -548,6 +548,44 @@ def parse_stl(filepath: str, options: GlobalOptions) -> Polyhedron:
     )
 
 
+# Parse OBJ files into Polyhedron objects
+def parse_obj(filepath: str, options: GlobalOptions) -> Polyhedron:
+    """Parse an OBJ file and return a Polyhedron object."""
+    vertices = []
+    faces = []
+
+    with open(filepath, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            parts = line.split()
+            if not parts:
+                continue
+
+            if parts[0] == "v":
+                vertex = [float(x) for x in parts[1:4]]
+                vertices.append(vertex)
+            elif parts[0] == "f":
+                # OBJ uses 1-based indexing, we convert to 0-based
+                face = []
+                for vert_def in parts[1:]:
+                    indices = vert_def.split("/")[0]
+                    face.append(int(indices) - 1)
+                faces.append(face)
+                print(face)
+    if not vertices:
+        raise ValueError(f"No vertices found in OBJ file: {filepath}")
+
+    return Polyhedron(
+        name=os.path.basename(filepath).replace(".obj", ""),
+        vertices=np.array(vertices, dtype=float),
+        faces=faces,
+        options=options,
+    )
+
+
 def save_histogram(polyhedron: Polyhedron, output_dir: str):
     offset_lengths = [data["offset_length"] for data in polyhedron.edges.values()]
     offset_lengths.sort()
@@ -789,8 +827,16 @@ def main():
         options_dict["object_type"] = ObjectType(options_dict["object_type"])
     options = GlobalOptions(**options_dict)
 
-    polyhedron = parse_stl(args.file, options)
-    polyhedron.isotropize()
+    file_ext = os.path.splitext(args.file)[1].lower()
+    if file_ext == ".stl":
+        polyhedron = parse_stl(args.file, options)
+    elif file_ext == ".obj":
+        polyhedron = parse_obj(args.file, options)
+    else:
+        raise ValueError(f"Unsupported file format: {file_ext}. Use .stl or .obj")
+
+    if args.isotropize:
+        polyhedron.isotropize()
     call_openscad(polyhedron, options, args.generate_outputs, args.output_dir)
 
 
