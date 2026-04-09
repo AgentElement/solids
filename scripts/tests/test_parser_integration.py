@@ -15,10 +15,7 @@ import subprocess
 import pytest
 from pathlib import Path
 
-# Add scripts directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-from parser import (
+from scripts.parser import (
     VisualPolyhedraParser,
     VisualPolyhedraLexer,
     StlParser,
@@ -517,8 +514,6 @@ class TestEdgeCases:
             f.write("")
             f.flush()
             try:
-                from parser import get_parser
-
                 parser = get_parser(f.name)
                 options = GlobalOptions()
                 # Should raise an exception for empty file
