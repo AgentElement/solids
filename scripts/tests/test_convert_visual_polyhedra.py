@@ -320,7 +320,7 @@ Faces:
         )
 
         assert result.returncode == 0
-        assert "Convert Visual Polyhedra files to OBJ format" in result.stdout
+        assert "Convert visual polyhedron text files to .obj" in result.stdout
         assert "-h" in result.stdout or "--help" in result.stdout
 
     def test_main_with_cube_data(self):
